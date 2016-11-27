@@ -1,0 +1,276 @@
+/**
+  @file         ParticleInfo.icc
+*/
+
+
+#ifndef ANALYSISSUPPORT_PARTICLEINFO_ICC
+#define ANALYSISSUPPORT_PARTICLEINFO_ICC
+
+#include "../interface/ParticleInfo.h"
+#include <iostream>
+#include <iomanip>
+#include <cmath>
+
+//_____________________________________________________________________________
+template<typename Particle>
+bool ParticleInfo::isLastInChain(const Particle* particle, bool (*selectID)(int))
+{
+  for (unsigned int iDau = 0; iDau < particle->numberOfDaughters(); ++iDau){
+    if(selectID && !selectID(particle->daughter(iDau)->status())) continue;
+    if (particle->daughter(iDau)->pdgId() == particle->pdgId())
+      return false;
+  }
+  return true;
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+bool ParticleInfo::isGenWHadronic(const Particle* particle) {
+  int wPdgid = TMath::Abs(particle->pdgId());
+  if(wPdgid != ParticleInfo::p_Wplus) return false;
+
+  for(unsigned int iD = 0; iD < particle->numberOfDaughters(); ++iD){
+    const Particle* dau = particle->daughter(iD);
+    int dauPdgid = TMath::Abs(dau->pdgId());
+    if(dauPdgid == ParticleInfo::p_Wplus) {
+      return ParticleInfo::isGenWHadronic(dau); // recurse to last w in chain
+    }
+  }
+
+  for(unsigned int iD = 0; iD < particle->numberOfDaughters(); ++iD){
+    if( ParticleInfo::isLeptonOrNeutrino(particle->daughter(iD)->pdgId()) ) return false; // is any daughter leptonic
+  }
+  return true;
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+bool ParticleInfo::isGenTopHadronic(const Particle* particle) {
+  int topPdgid = TMath::Abs(particle->pdgId());
+  if(topPdgid != ParticleInfo::p_t) return false;
+
+  for(unsigned int iD = 0; iD < particle->numberOfDaughters(); ++iD){
+    const Particle* dau = particle->daughter(iD);
+    int dauPdgid = TMath::Abs(dau->pdgId());
+    if(dauPdgid == ParticleInfo::p_t) {
+      return ParticleInfo::isGenTopHadronic(dau); // recurse to last top in chain
+    }
+  }
+
+  for(unsigned int iD = 0; iD < particle->numberOfDaughters(); ++iD){
+    auto dau = ParticleInfo::getFinal(particle->daughterRef(iD));
+    int dauPdgid = TMath::Abs(dau->pdgId());
+    if(dauPdgid != ParticleInfo::p_Wplus) continue;  // find W daughter
+    auto w = ParticleInfo::getFinal(dau); // last W in chain    
+    for(unsigned int iWD = 0; iWD < w->numberOfDaughters(); ++iWD){
+      if( ParticleInfo::isLeptonOrNeutrino(w->daughter(iWD)->pdgId()) ) return false; // no need for last in chain here
+    }
+  }
+  return true;
+}
+//_____________________________________________________________________________
+template<typename ParticleRef>
+ParticleRef ParticleInfo::getFinal(ParticleRef particle, int maxNumDaughters)
+{
+  assert(!particle.isNull());
+
+  while (const unsigned numDaughters = particle->numberOfDaughters()) {
+    if (maxNumDaughters > 0 && int(numDaughters) > maxNumDaughters)
+      break;
+
+    ParticleRef           chain;
+    for (unsigned iDau = 0; iDau < numDaughters; ++iDau)
+      if (particle->daughter(iDau)->pdgId() == particle->pdgId()) {
+        chain = ParticleRef(particle->daughterRef(iDau).operator->(), particle->daughterRef(iDau).key());
+        break;
+      }
+    if (chain.isNull())   break;
+    particle              = chain;
+  }
+
+  return particle;
+}
+//_____________________________________________________________________________
+template<typename Particle>
+bool ParticleInfo::isA(int particleID, const Particle* p, bool checkCharge)
+{
+  int id = p->pdgId();
+  if(checkCharge) return (id == particleID);
+
+  return (std::fabs(id) == particleID);
+}
+//_____________________________________________________________________________
+template<typename Object>
+TString ParticleInfo::nameFor(const Object& object)
+{
+  return nameFor(object.pdgId());
+}
+//_____________________________________________________________________________
+template<typename Object>
+TString ParticleInfo::titleFor(const Object& object)
+{
+  return titleFor(object.pdgId());
+}
+//_____________________________________________________________________________
+template<typename Particle>
+std::ostream& ParticleInfo::printGenHistory(const std::vector<Particle>& genParticles, const unsigned int particleIndex)
+{
+  const Particle&      particle        = genParticles[particleIndex];
+  if      (particle.numberOfMothers() == 1)
+    printGenHistory(genParticles, particle.motherRef().key());
+  else if (particle.numberOfMothers()  > 1)
+    std::cout  << "...";
+  std::cout    << " -> " << particleIndex << ":" << ParticleInfo::titleFor(particle.pdgId());
+  return std::cout;
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+void ParticleInfo::printGenInfo(const std::vector<Particle>& genParticles, int genBound, int genStart)
+{
+  using namespace std;
+
+  cout    << right << setw(6) << "#" << " " << setw(10) << "pdgId" << "  " << left << setw(20) << "Name"
+          << "  " << "Chg" << "  " << setw(10) << "Mass" << "  " << setw(48) << " Momentum"
+          << left << "  " << setw(10) << "Mothers" << " " << setw(30) << "Daughters" << endl;
+  if (genBound < 0)             genBound        =            static_cast<int>(genParticles.size());
+  else                          genBound        = TMath::Min(static_cast<int>(genParticles.size()), genBound);
+
+  if (genStart < 0)             genStart        =            0;
+
+  for (int iGen = genStart; iGen < genBound; ++iGen) {
+    printGenParticleInfo(genParticles[iGen], iGen);
+  }
+  cout << setfill('-') << setw(150) << "" << setfill(' ') << endl;
+}
+//_____________________________________________________________________________
+template<typename Particle>
+void ParticleInfo::printGenParticleInfo(const Particle* genParticle, const int idx){
+  using namespace std;
+  cout  << right << setw(3) << genParticle->status();
+  cout  << right << setw(3) << idx << " " << setw(10) << genParticle->pdgId() << "  ";
+  cout  << left << setw(20) << ParticleInfo::titleFor(genParticle->pdgId());
+  cout  << right << "  " << setw(3) << genParticle->charge() << "  " << TString::Format("%10.3g", genParticle->mass() < 1e-5 ? 0 : genParticle->mass());
+  cout  << left << setw(50) << TString::Format("  (E=%6.4g pT=%6.4g eta=%7.3g phi=%7.3g)", genParticle->energy(), genParticle->pt(), genParticle->eta(), genParticle->phi());
+
+  TString                     mothers;
+  for (unsigned int iMom = 0; iMom < genParticle->numberOfMothers(); ++iMom) {
+    if (mothers.Length())     mothers        += ",";
+    mothers   += genParticle->motherRef(iMom).key();
+  }
+  cout << "  " << setw(10) << mothers;
+  TString                     daughters;
+  for (unsigned int iDau = 0; iDau < genParticle->numberOfDaughters(); ++iDau) {
+    if (daughters.Length())   daughters      += ",";
+    daughters += genParticle->daughterRef(iDau).key();
+  }
+  cout << " " << setw(30) << daughters << endl;
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+void ParticleInfo::printGenParticleInfo(const Particle& genParticle, const int idx){
+  printGenParticleInfo(&genParticle, idx);
+}
+//_____________________________________________________________________________
+template<typename Particle>
+void ParticleInfo::printPackedGenInfo(const std::vector<Particle>& genParticles, int genBound, int genStart)
+{
+  using namespace std;
+
+  cout    << right << setw(6) << "#" << " " << setw(10) << "pdgId" << "  " << left << setw(20) << "Name"
+          << "  " << "Chg" << "  " << setw(10) << "Mass" << "  " << setw(48) << " Momentum"
+          << left << "  " << setw(10) << "Mothers" << " " << setw(30) << "Daughters" << endl;
+  if (genBound < 0)             genBound        =            static_cast<int>(genParticles.size());
+  else                          genBound        = TMath::Min(static_cast<int>(genParticles.size()), genBound);
+
+  if (genStart < 0)             genStart        =            0;
+
+  for (int iGen = genStart; iGen < genBound; ++iGen) {
+    printPackedGenParticleInfo(genParticles[iGen], iGen);
+  }
+  cout << setfill('-') << setw(150) << "" << setfill(' ') << endl;
+}
+//_____________________________________________________________________________
+template<typename Particle>
+void ParticleInfo::printPackedGenParticleInfo(const Particle* genParticle, const int idx){
+  using namespace std;
+  cout  << right << setw(3) << genParticle->status();
+  cout  << right << setw(3) << idx << " " << setw(10) << genParticle->pdgId() << "  ";
+  cout  << left << setw(20) << ParticleInfo::titleFor(genParticle->pdgId());
+  cout  << right << "  " << setw(3) << genParticle->charge() << "  " << TString::Format("%10.3g", genParticle->mass() < 1e-5 ? 0 : genParticle->mass());
+  cout  << left << setw(50) << TString::Format("  (E=%6.4g pT=%6.4g eta=%7.3g phi=%7.3g)", genParticle->energy(), genParticle->pt(), genParticle->eta(), genParticle->phi());
+
+  TString                     mothers;
+  for (unsigned int iMom = 0; iMom < genParticle->numberOfMothers(); ++iMom) {
+    if (mothers.Length())     mothers        += ",";
+    mothers   += genParticle->motherRef().key();
+  }
+  cout << "  " << setw(10) << mothers<<endl;
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+void ParticleInfo::printPackedGenParticleInfo(const Particle& genParticle, const int idx){
+  printPackedGenParticleInfo(&genParticle, idx);
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+bool ParticleInfo::hasMother(const Particle* genParticle, const int pid, bool checkCharge) {
+
+  for(unsigned int iMom = 0; iMom < genParticle->numberOfMothers(); ++iMom) {
+    if(isA(pid, genParticle->mother(iMom), checkCharge)) return true;
+  }
+
+  return false;
+
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+const Particle* ParticleInfo::findMother(const Particle* genParticle, const int pid, bool checkCharge) {
+
+  const Particle* mother = 0;
+
+  for(unsigned int iMom = 0; iMom < genParticle->numberOfMothers(); ++iMom) {
+    if(isA(pid, genParticle->mother(iMom), checkCharge)) {
+      mother = genParticle->mother(iMom);
+      break;
+    }
+  }
+
+  return mother;
+
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+bool ParticleInfo::hasDaughter(const Particle* genParticle, const int pid, bool checkCharge) {
+
+  for(unsigned int iDau = 0; iDau < genParticle->numberOfDaughters(); ++iDau) {
+    if(isA(pid, genParticle->daughter(iDau), checkCharge)) return true;
+  }
+
+  return false;
+
+}
+
+//_____________________________________________________________________________
+template<typename Particle>
+const Particle* ParticleInfo::findDaughter(const Particle* genParticle, const int pid, bool checkCharge) {
+
+  const Particle* daughter = 0;
+
+  for(unsigned int iDau = 0; iDau < genParticle->numberOfDaughters(); ++iDau) {
+    if(isA(pid, genParticle->daughter(iDau), checkCharge)) {
+      daughter = genParticle->daughter(iDau);
+      break;
+    }
+  }
+
+  return daughter;
+
+}
+
+#endif //PARTICLEINFO_ICC
