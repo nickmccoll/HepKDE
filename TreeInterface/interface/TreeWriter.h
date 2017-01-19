@@ -6,7 +6,6 @@
 #include <assert.h>
 
 #include "TreeWriterData.h"
-#include "Types.h"
 
 class TFile;
 class TreeWriter : public TreeWriterData {
