@@ -1,9 +1,3 @@
-/**
-  @file         ParticleInfo.h
-  @author       Sue Ann Koay (sakoay@cern.ch)
-*/
-
-
 #ifndef ANALYSISSUPPORT_PARTICLEUTILITIES_H
 #define ANALYSISSUPPORT_PARTICLEUTILITIES_H
 
@@ -11,7 +5,7 @@
 #include <TString.h>
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-#include "../interface/ParticleInfo.h"
+#include "AnalysisSupport/Utilities/interface/ParticleInfo.h"
 
 namespace ParticleUtilities
 {

@@ -7,7 +7,6 @@
 
 #include "TreeWriterData.h"
 #include "Types.h"
-using namespace AnalysisSupportTypes;
 
 class TFile;
 class TreeWriter : public TreeWriterData {
