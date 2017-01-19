@@ -1,5 +1,73 @@
 For sample production
  
+>>> FOR Pythia
+8,31d27
+< process.maxEvents = cms.untracked.PSet(
+<     input = cms.untracked.int32(10)
+< )
+< 
+33a30,37
+> from FWCore.ParameterSet.VarParsing import VarParsing
+> options = VarParsing('analysis')
+> options.register ('nEvents',
+> 				  0,
+> 				  VarParsing.multiplicity.singleton,
+> 				  VarParsing.varType.int,
+> 				  "Number of events")
+> options.parseArguments()
+35d38
+< process.options = cms.untracked.PSet(
+36a40,41
+> process.maxEvents = cms.untracked.PSet(
+>     input = cms.untracked.int32(options.nEvents)
+38a44
+> 
+57c63
+<     fileName = cms.untracked.string('file:step1.root'),
+---
+>     fileName = cms.untracked.string(options.outputFile),
+72c78
+<         MaxEta = cms.double(2.5),
+---
+>         MaxEta = cms.double(3.0),
+74,75c80,81
+<         MaxPt = cms.double(100.01),
+<         MinEta = cms.double(-2.5),
+---
+>         MaxPt = cms.double(30.0),
+>         MinEta = cms.double(-3.0),
+77c83
+<         MinPt = cms.double(99.99),
+---
+>         MinPt = cms.double(0.5),
+99a106,129
+> from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
+> randSvc = RandomNumberServiceHelper(process.RandomNumberGeneratorService)
+> randSvc.populate()
+> 
+> def randomizeMuonGun(process):
+>     ## filter for gen level
+>     process.genMuons = cms.EDFilter("PdgIdCandViewSelector",
+>         src = cms.InputTag("genParticles"),
+>         pdgId = cms.vint32(13, -13)
+>     )
+> 
+>     ## filter for sim level
+>     process.genMuonsGEM = cms.EDFilter("CandViewSelector",
+>         src = cms.InputTag("genMuons"),
+>         cut = cms.string("abs(eta)<4.0 & abs(eta)>1.9"),   
+>         filter = cms.bool(True)
+>     )
+> 
+>     ## filter sequence
+>     process.gen_mu_select = cms.Sequence(process.genMuons * process.genMuonsGEM)
+>     process.generation_step += process.gen_mu_select
+>     process.simulation_step += process.gen_mu_select
+>     return process
+> randomizeMuonGun(process)
+
+
+>>>> FOR HIGGS
 
 27a28,31
 > from FWCore.ParameterSet.VarParsing import VarParsing
