@@ -27,6 +27,7 @@
     void fill(const Type var) { value = var;}
     void set(const Type var) {fill(var);}
     void reset() { value = defaultValue;}
+    Type get() const {return value;}
     void book(TreeWrapper * tw) {tw->book(bookName().c_str(),value,type.c_str());}
   protected:
     const std::string type;
@@ -43,6 +44,7 @@
     void fill(const Type var) { value.push_back(var);}
     void set(const std::vector<Type>& vars) {value = vars;}
     void reset() { unsigned int curSize = value.size(); value.resize(0); value.reserve(curSize);}
+    const std::vector<Type>& get() const {return value;}
     void book(TreeWrapper * tw) {tw->book(bookName().c_str(),value);}
   protected:
     const Type        defaultValue;
@@ -90,6 +92,12 @@
     void castFillMulti(unsigned int index, const FillType var){assert(index < data.size()); ((TreeMultiVar<Type>*)(data[index]))->fill(var);}
     template<typename Type>
     void defaultFillMulti(unsigned int index){assert(index < data.size()); ((TreeMultiVar<Type>*)(data[index]))->fill();}
+
+    template<typename Type>
+    Type get(unsigned int index) const { return ((TreeVar<Type>*)(data[index]))->get();}
+    template<typename Type>
+    const std::vector<Type>& getMulti(unsigned int index) const {return ((TreeMultiVar<Type>*)(data[index]))->get();}
+
 
     void book(TreeWrapper * tw){
       for(auto d : data) d->book(tw);

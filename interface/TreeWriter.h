@@ -6,13 +6,10 @@
 #include <assert.h>
 
 #include "TreeWriterData.h"
+#include "Types.h"
+using namespace AnalysisSupportTypes;
 
 class TFile;
-
-typedef   unsigned char        size8 ; // 8 bit 0->255
-typedef   unsigned short int   size16; //16 bit 0->65536
-typedef   unsigned int         size  ; //32 bit 0->4294967296
-
 class TreeWriter : public TreeWriterData {
   public:
   TreeWriter(TString fileName, TString treeName, TString treeTitle);
