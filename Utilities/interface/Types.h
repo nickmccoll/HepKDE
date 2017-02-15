@@ -4,6 +4,10 @@
 #include<iostream>
 #include<string>
 
+#include <Math/PtEtaPhiE4D.h>
+#include <Math/PtEtaPhiM4D.h>
+#include <Math/LorentzVector.h>
+
 namespace ASTypes {
 typedef   char                 int8  ;
 typedef   short int            int16 ;
@@ -11,6 +15,15 @@ typedef   unsigned char        size8 ; // 8 bit 0->255
 typedef   unsigned short int   size16; //16 bit 0->65536
 typedef   unsigned int         size  ; //32 bit 0->4294967296
 
+
+typedef ROOT::Math::PtEtaPhiM4D<double>				                CylLorentzCoord;
+typedef ROOT::Math::PtEtaPhiM4D<float> 				                CylLorentzCoordF;
+typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<float> >	XYZTLorentzVectorF;
+typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> >	PtEtaPhiMLorentzVectorD;
+typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<float> >	PtEtaPhiMLorentzVectorF;
+typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<float> >	CartLorentzVector;
+typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double> >	CylLorentzVector;
+typedef ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<float> >	CylLorentzVectorF;
 
 template<typename Target, typename Source>
 Target convertTo(Source source, const char name[], bool lenient = false, bool* good = 0)
@@ -45,4 +58,5 @@ Target convertTo(Source source, const char name[], bool lenient = false, bool* g
 
 
 };
+
 #endif
