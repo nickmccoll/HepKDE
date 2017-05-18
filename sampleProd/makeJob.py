@@ -8,10 +8,11 @@ import subprocess
 parser = argparse.ArgumentParser(description='Prepare and submit ntupling jobs')
 parser.add_argument("-c", "--config", dest="config", default="runTestAnalyzer.py", help="Configuration file to be run using cmsRun to run. [Default: runTestAnalyzer.py]")
 parser.add_argument("-i", "--inputdir", dest="inputdir", default="/eos/uscms/store/user/${USER}/13TeV/ntuples", help="Input dataset. [Default: runTestAnalyzer.py]")
-parser.add_argument("-d", "--isDas", dest="isDas", default=True, help="Output directory for ntuples. [Default: \"/eos/uscms/store/user/${USER}/]")
+parser.add_argument("-d", "--isDas", dest="isDas", default=False, help="Output directory for ntuples. [Default: \"/eos/uscms/store/user/${USER}/]")
 parser.add_argument("-j", "--jobdir", dest="jobdir", default="jobs", help="Directory for job files. [Default: jobs]")
 parser.add_argument("-nf", "--numFiles", dest="numfiles", type=int, default=5, help="Number of files per job. [Default: 5]")
 parser.add_argument("-o", "--outdir", dest="outdir", default="/eos/uscms/store/user/${USER}/13TeV/processed", help="Output directory for ntuples. [Default: \"/eos/uscms/store/user/${USER}/13TeV/ntuples\"]")
+parser.add_argument("-of", "--outFormat", dest="outFormat", default="job_JOBNUM.root", help="Output fole format, JOBNUM will be replaced with the job number. [Default: \"job_JOBNUM.root\"]")
 args = parser.parse_args()
 
 script = "runJob.sh"
@@ -43,7 +44,7 @@ while iF < nFiles:
 	if(iF2 == 0):
 		jobfiles = open("{0}/files_{1}.txt".format(args.jobdir, iJ), "w")	
 	if args.inputdir.startswith("/eos/uscms/store/user") :
-		jobfiles.write("root://cmseos:1094/%s" % (filelist[iF]))		
+		jobfiles.write("root://cmseos:1094/%s" % (re.match(r'/eos/uscms(.*)',filelist[iF]).group(1) ) )		
 	else :
 		jobfiles.write(filelist[iF])		
 	jobfiles.write("\n")
@@ -60,7 +61,7 @@ Requirements            = (Arch == "X86_64") && (OpSys == "LINUX")
 request_disk            = 10000000
 request_memory          = 5000
 Executable              = {runscript}
-Arguments               = {cfg} {outputdir} job_{num}.root {workdir} files_{num}.txt
+Arguments               = {cfg} {outputdir} {outfile} {workdir} files_{num}.txt
 Output                  = logs/gen_{num}.out
 Error                   = logs/gen_{num}.err
 Log                     = logs/gen_{num}.log
@@ -74,7 +75,7 @@ EOF
 
 condor_submit submit.cmd;
 rm submit.cmd""".format(
-			runscript=script, cfg=args.config, workdir="${CMSSW_BASE}", num=iJ, jobdir=args.jobdir, outputdir=args.outdir
+			runscript=script, cfg=args.config, workdir="${CMSSW_BASE}", num=iJ, jobdir=args.jobdir, outputdir=args.outdir, outfile=args.outFormat.replace("JOBNUM",str(iJ))
 			))
 		jobscript.close()
 		os.system("chmod +x %s/submit_%d.sh" % (args.jobdir, iJ))		
