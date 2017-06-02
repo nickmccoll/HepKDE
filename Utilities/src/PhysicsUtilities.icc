@@ -1,0 +1,335 @@
+#ifndef ANALYSISSUPPORT_PHYSICSUTILITIES_ICC
+#define ANALYSISSUPPORT_PHYSICSUTILITIES_ICC
+
+#include<TString.h>
+#include "../interface/PhysicsUtilities.h"
+
+/********************/
+/*   Computations   */
+/********************/
+
+//_____________________________________________________________________________
+// Count Objects
+//_____________________________________________________________________________
+template<typename Object, typename ObjectPtr>
+ASTypes::size PhysicsUtilities::countObjectsDeref(const std::vector<ObjectPtr>& objects, double minPT, double maxEta, bool (*test)(const Object&))
+{
+  const ASTypes::size          numObjects    = objects.size();
+  ASTypes::size                count         = 0;
+  for (ASTypes::size iObject = 0; iObject < numObjects; ++iObject) {
+    if (test && !(*test)(*objects[iObject]))            continue;
+    if (objects[iObject]->pt()              < minPT)    continue;
+    if (TMath::Abs(objects[iObject]->eta()) > maxEta)   continue;
+    ++count;
+  } // end loop over objects
+  return count;
+}
+
+//_____________________________________________________________________________
+template<typename ObjectPtr>
+ASTypes::size PhysicsUtilities::countObjectsDeref(const std::vector<ObjectPtr>& objects, double minPT, double maxEta)
+{
+  const ASTypes::size          numObjects    = objects.size();
+  ASTypes::size                count         = 0;
+  for (ASTypes::size iObject = 0; iObject < numObjects; ++iObject) {
+    if (objects[iObject]->pt()              < minPT)    continue;
+    if (TMath::Abs(objects[iObject]->eta()) > maxEta)   continue;
+    ++count;
+  } // end loop over objects
+  return count;
+}
+
+//_____________________________________________________________________________
+template<typename Object>
+ASTypes::size PhysicsUtilities::countObjects(const std::vector<Object>& objects, double minPT, double maxEta, bool (*test)(const Object&))
+{
+  const ASTypes::size          numObjects    = objects.size();
+  ASTypes::size                count         = 0;
+  for (ASTypes::size iObject = 0; iObject < numObjects; ++iObject) {
+    const Object&     object        = objects[iObject];
+    if (object.pt()    < minPT ) continue;
+    if (absEta(object) > maxEta) continue;
+    if (test && !(*test)(object))     continue;
+    ++count;
+  } // end loop over objects
+  return count;
+}
+//_____________________________________________________________________________
+template<typename Object, typename Analyzer>
+ASTypes::size PhysicsUtilities::countObjects(const std::vector<Object>& objects, const Analyzer* analyzer, bool (Analyzer::*test)(const Object&) const)
+{
+  const ASTypes::size            numObjects    = objects.size();
+  ASTypes::size                  count         = 0;
+  for (ASTypes::size iObject = 0; iObject < numObjects; ++iObject) {
+    const Object&       object        = objects[iObject];
+    if (analyzer && test && !(analyzer->*test)(object))   continue;
+    ++count;
+  } // end loop over objects
+
+  return count;
+}
+//_____________________________________________________________________________
+template<typename Object, typename Analyzer>
+ASTypes::size PhysicsUtilities::countObjects(const std::vector<Object>& objects, const Analyzer* analyzer, bool (Analyzer::*test)(const Object&) const, double minPT, double maxEta)
+{
+  const ASTypes::size            numObjects    = objects.size();
+  ASTypes::size                  count         = 0;
+  for (ASTypes::size iObject = 0; iObject < numObjects; ++iObject) {
+    const Object&       object        = objects[iObject];
+    if (get(object).pt()    < minPT )                     continue;
+    if (absEta(get(object)) > maxEta)                     continue;
+    if (analyzer && test && !(analyzer->*test)(object))   continue;
+    ++count;
+  } // end loop over objects
+
+  return count;
+}
+//_____________________________________________________________________________
+template<typename Property, typename Object>
+ASTypes::size PhysicsUtilities::countObjectProperties(const std::vector<Object>& objects, const Property& (Object::*getProperty)() const, double minPT, double maxEta, bool (*test)(const Property&))
+{
+  const ASTypes::size          numObjects    = objects.size();
+  ASTypes::size                count         = 0;
+  for (ASTypes::size iObject = 0; iObject < numObjects; ++iObject) {
+    const Property&   object        = (objects[iObject].*getProperty)();
+    if (get(object).pt()    < minPT ) continue;
+    if (absEta(get(object)) > maxEta) continue;
+    if (test && !(*test)(object))     continue;
+    ++count;
+  } // end loop over objects
+  return count;
+}
+//_____________________________________________________________________________
+template<typename Object, typename Other>
+ASTypes::size PhysicsUtilities::countDistinctObjects(const std::vector<Object>& objects, const std::vector<Other>& vetoNearby, double minDRnearby, double minPT, double maxEta)
+{
+  const ASTypes::size            numObjects    = objects.size();
+  ASTypes::size                  count         = 0;
+  for (ASTypes::size iObject = 0; iObject < numObjects; ++iObject) {
+    const Object&       object        = objects[iObject];
+    if (get(object).pt()    < minPT ) continue;
+    if (absEta(get(object)) > maxEta) continue;
+
+    double              nearestDR     = 1e308;
+    for (ASTypes::size iVeto = 0; iVeto < vetoNearby.size(); ++iVeto)
+      nearestDR         = TMath::Min(nearestDR, deltaR(get(object), get(vetoNearby[iVeto])));
+    if (nearestDR > minDRnearby)
+      ++count;
+  } // end loop over objects
+
+  return count;
+}
+
+//_____________________________________________________________________________
+template<typename Target, typename Source>
+Target PhysicsUtilities::convertTo(Source source, const char name[], bool lenient, bool* good)
+{
+  Target            converted = static_cast<Target>(source);
+
+  if (static_cast<Source>(converted) != source) {
+    const Target    lowest    = !std::numeric_limits<Target>::is_signed
+                              ? 0
+                              : std::numeric_limits<Target>::has_infinity
+                              ? -std::numeric_limits<Target>::infinity()
+                              :  std::numeric_limits<Target>::min()
+                              ;
+    TString         problem;
+    problem.Form( "Source value %.10g outside of target range [%.10g,%.10g] for '%s'."
+                , (double)  source
+                , (double)  lowest
+                , (double)  std::numeric_limits<Target>::max()
+                , name
+                );
+    if (good)      *good      = false;
+    if (lenient) {
+      std::cerr << "WARNING: " << problem << std::endl;
+      return  ( source > static_cast<Source>(std::numeric_limits<Target>::max())
+              ? std::numeric_limits<Target>::max()
+              : lowest
+              );
+    }
+    std::cout << "convertTo()" << problem.Data()<<std::endl;
+    assert(false);
+  }
+
+  return converted;
+}
+
+//_____________________________________________________________________________
+template<typename Object>
+void PhysicsUtilities::trash(std::vector<Object*>& objects)
+{
+  const ASTypes::size    numObjects  = objects.size();
+  for (ASTypes::size iObj = 0; iObj < numObjects; ++iObj)
+    if (objects[iObj])      delete objects[iObj];
+  objects.clear();
+}
+//_____________________________________________________________________________
+template<typename Key, typename Object>
+void PhysicsUtilities::trash(std::map<Key,Object*>& objects)
+{
+  const typename std::map<Key,Object*>::const_iterator endObjects  = objects.end();
+  for (typename std::map<Key,Object*>::iterator iObj = objects.begin(); iObj != endObjects; ++iObj)
+    if (iObj->second)       delete iObj->second;
+  objects.clear();
+}
+//_____________________________________________________________________________
+// Finding objects in a group
+//_____________________________________________________________________________
+template<typename Object1, typename Object2>
+int PhysicsUtilities::findIndex(const Object1* target, const std::vector<Object2>& items, ASTypes::size first, ASTypes::size last)
+{
+  if (items.empty())  return -1;
+  if (last <= first)  last  = items.size() - 1u;
+  for (ASTypes::size item = first; item <= last; ++item)
+    if (&(items[item]) == target)
+      return item;
+  return -1;
+}
+
+//_____________________________________________________________________________
+template<typename Thing1, typename Thing2, typename Comparator, typename Distance>
+int PhysicsUtilities::findByDistance(Comparator comparator, Distance ruler, const Thing1& reference, const std::vector<Thing2>& objects,
+                                  double& bestDistance, double maxDistance, const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  if (numObjects < 0)       numObjects    = static_cast<int>(objects.size());
+  int                       bestIndex     = -1;
+                            bestDistance  = maxDistance;
+  for (int index = 0; index < numObjects; ++index) {
+    if (vetoed && (*vetoed)[index])       continue;
+    if (get(objects[index]).pt() < minPT) continue;
+    const double            distance      = ruler(reference, objects[index]);
+    if (comparator(distance, bestDistance)) {
+      bestIndex             = index;
+      bestDistance          = distance;
+    }
+  } // end loop over objects to check
+  return bestIndex;
+}
+template<typename Thing1, typename Thing2, typename Comparator, typename Distance>
+int PhysicsUtilities::findByDistance(Comparator comparator, Distance ruler, const Thing1& reference, const Thing2& objects,
+                                  double& bestDistance, double maxDistance, const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  if (numObjects < 0)       numObjects    = static_cast<int>(objects.numberOfDaughters());
+  int                       bestIndex     = -1;
+                            bestDistance  = maxDistance;
+  for (int index = 0; index < numObjects; ++index) {
+    if (vetoed && (*vetoed)[index])                 continue;
+    if (get(objects.daughter(index)).pt() < minPT)  continue;
+    const double            distance      = ruler(reference, *(objects.daughter(index)));
+    if (comparator(distance, bestDistance)) {
+      bestIndex             = index;
+      bestDistance          = distance;
+    }
+  } // end loop over objects to check
+  return bestIndex;
+}
+//_____________________________________________________________________________
+template<typename Thing1, typename Thing2>
+int PhysicsUtilities::findNearestDR(const Thing1& reference, const std::vector<Thing2>& objects, double& nearestDR, double maxDeltaR,
+                                 const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  static std::less<double>          comparator;
+  DeltaR2<Thing1, Thing2>            distance;
+  int near = findByDistance(comparator, distance, reference, objects, nearestDR, maxDeltaR*maxDeltaR, minPT, vetoed, numObjects);
+  nearestDR = TMath::Sqrt(nearestDR);
+  return near;
+}
+
+template<typename Thing1, typename Thing2>
+int PhysicsUtilities::findNearestDRDeref(const Thing1& reference, const std::vector<Thing2>& objects, double& nearestDR, double maxDeltaR,
+                                      const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  static std::less<double>          comparator;
+  DeltaR2Deref<Thing1, Thing2>       distance;
+  int near = findByDistance(comparator, distance, reference, objects, nearestDR, maxDeltaR*maxDeltaR, minPT, vetoed, numObjects);
+  nearestDR = TMath::Sqrt(nearestDR);
+  return near;
+}
+
+template<typename Thing1, typename Thing2>
+int PhysicsUtilities::findNearestDPhi(const Thing1& reference, const std::vector<Thing2>& objects, double& nearestDPhi, double maxDeltaPhi,
+                                   const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  static std::less<double>          comparator;
+  AbsDeltaPhi<Thing1, Thing2>       distance;
+  return findByDistance(comparator, distance, reference, objects, nearestDPhi, maxDeltaPhi, minPT, vetoed, numObjects);
+}
+
+template<typename Thing1, typename Thing2>
+int PhysicsUtilities::findNearestDPhiDeref(const Thing1& reference, const std::vector<Thing2>& objects, double& nearestDPhi, double maxDeltaPhi,
+                                        const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  static std::less<double>          comparator;
+  AbsDeltaPhiDeref<Thing1, Thing2>  distance;
+  return findByDistance(comparator, distance, reference, objects, nearestDPhi, maxDeltaPhi, minPT, vetoed, numObjects);
+}
+
+//_____________________________________________________________________________
+template<typename Thing1, typename Thing2>
+int PhysicsUtilities::findFurthestDR(const Thing1& reference, const std::vector<Thing2>& objects, double& furthestDR, double minDeltaR,
+                                  const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  static std::greater<double> comparator;
+  DeltaR2<Thing1, Thing2>      distance;
+  int fur = findByDistance(comparator, distance, reference, objects, furthestDR, minDeltaR*minDeltaR, minPT, vetoed, numObjects);
+  furthestDR = TMath::Sqrt(furthestDR);
+  return fur;
+}
+template<typename Thing1, typename Thing2>
+int PhysicsUtilities::findFurthestDPhi(const Thing1& reference, const std::vector<Thing2>& objects, double& furthestDR, double minDeltaR,
+                                    const double minPT, const std::vector<bool>* vetoed, int numObjects)
+{
+  static std::greater<double> comparator;
+  AbsDeltaPhi<Thing1, Thing2> distance;
+  return findByDistance(comparator, distance, reference, objects, furthestDR, minDeltaR, minPT, vetoed, numObjects);
+}
+
+//_____________________________________________________________________________
+template<typename Thing1, typename Thing2>
+double PhysicsUtilities::getNearestDR(const Thing1& reference, const std::vector<Thing2>& objects, int thisIndex, const double minPT)
+{
+  const ASTypes::size        numObjects    = objects.size();
+  double            nearestDR     = -1;
+  for (ASTypes::size index = 0; index < numObjects; ++index) {
+    if (static_cast<int>(index) == thisIndex) continue;
+    if (get(objects[index]).pt() < minPT)     continue;
+    const double    dR            = deltaR(reference, objects[index]);
+    if (nearestDR < 0 || dR < nearestDR)
+      nearestDR     = dR;
+  } // end loop over objects to check
+  return nearestDR;
+}
+#endif
+
+
+//_____________________________________________________________________________
+template<class T1, class T2>
+std::vector<T1> PhysicsUtilities::removeOverlapsDR(const std::vector<T1>& objToRemove, const std::vector<T2> &objToKeep, double distance){
+  std::vector<T1> output;
+  for (auto &j : objToRemove){
+    bool isOverlap = false;
+    for (auto &jtk : objToKeep){
+      if(deltaR(j, jtk) < distance) {
+        isOverlap = true; break;
+      }
+    }
+    if(!isOverlap) output.push_back(j);
+  }
+  return output;
+}
+
+template<class T1, class T2>
+std::vector<T1> PhysicsUtilities::removeOverlapsDRDeref(const std::vector<T1>& ptrToRemove, const std::vector<T2> &ptrToKeep, double distance){
+  std::vector<T1> output;
+  for (auto &j : ptrToRemove){
+    bool isOverlap = false;
+    for (auto &jtk : ptrToKeep){
+      if(deltaR(*j, *jtk) < distance) {
+        isOverlap = true; break;
+      }
+    }
+    if(!isOverlap) output.push_back(j);
+  }
+  return output;
+}
