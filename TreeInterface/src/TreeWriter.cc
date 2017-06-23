@@ -31,6 +31,7 @@ void TreeWriter::write() {
   tree->getTree()->Write();
   file->Close();
   delete file;
+  file = 0;
   tree = 0;
 }
 

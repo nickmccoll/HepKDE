@@ -21,6 +21,4 @@ TreeWrapper::TreeWrapper(TTree *tree, const char *treename) :
 }
 
 TreeWrapper::~TreeWrapper()
-{
-  if(fTree) delete fTree;
-}
+{}

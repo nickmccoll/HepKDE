@@ -9,11 +9,12 @@
 #include <Math/LorentzVector.h>
 
 namespace ASTypes {
-typedef   char                 int8  ;
-typedef   short int            int16 ;
-typedef   unsigned char        size8 ; // 8 bit 0->255
-typedef   unsigned short int   size16; //16 bit 0->65536
-typedef   unsigned int         size  ; //32 bit 0->4294967296
+typedef   char                   int8  ;
+typedef   short int              int16 ;
+typedef   unsigned char          size8 ; // 8 bit 0->255
+typedef   unsigned short int     size16; //16 bit 0->65,536
+typedef   unsigned int           size  ; //32 bit 0->4,294,967,296
+typedef   unsigned long long int size64; //64 bit 0->18,446,744,073,709,551,615
 
 
 typedef ROOT::Math::PtEtaPhiM4D<double>				                CylLorentzCoord;

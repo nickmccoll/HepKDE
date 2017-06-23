@@ -18,23 +18,45 @@ filelist =  [re.match(r'submit_(.*).sh', f).group(1) for f in os.listdir(args.jo
 filesToDelete = []
 filesToSubmit = []
 
+xrootDir = args.outdir
+if args.outdir.count("/eos/uscms/store/user") :
+	xrootDir = "root://cmseos:1094/%s" % (re.match(r'/eos/uscms(.*)',args.outdir).group(1) )		
 
-for f in filelist:
-	fileName = "{0}/job_{1}.root".format(args.outdir, f)
-	if os.path.isfile(fileName):
-		if args.verify:
-			tfile = TFile(fileName, "read");
-			if(tfile.IsOpen()):
-				t = tfile.Get("Events")
-				if not t :
-					filesToSubmit.append(f)	
-					filesToDelete.append(fileName)					
-				tfile.Close()
-			else :
+if args.verify:
+	for f in filelist:
+		fileName = "{0}/job_{1}.root".format(args.outdir, f)
+		xrootDFN = "{0}/job_{1}.root".format(xrootDir, f)	
+		tfile = TFile.Open(xrootDFN, "read");
+		if(tfile):
+			t = tfile.Get("Events")
+			if not t :
 				filesToSubmit.append(f)	
-				filesToDelete.append(fileName)
-	else :
-		filesToSubmit.append(f)
+				filesToDelete.append(fileName)					
+			tfile.Close()
+		else :
+			filesToSubmit.append(f)	
+else :
+	for f in filelist:
+		fileName = "{0}/job_{1}.root".format(args.outdir, f)
+		if not os.path.isfile(fileName):
+			filesToSubmit.append(f)			
+
+# for f in filelist:
+# 	fileName = "{0}/job_{1}.root".format(args.outdir, f)
+# 	if os.path.isfile(fileName):
+# 		if args.verify:
+# 			tfile = TFile(fileName, "read");
+# 			if(tfile.IsOpen()):
+# 				t = tfile.Get("Events")
+# 				if not t :
+# 					filesToSubmit.append(f)	
+# 					filesToDelete.append(fileName)					
+# 				tfile.Close()
+# 			else :
+# 				filesToSubmit.append(f)	
+# 				filesToDelete.append(fileName)
+# 	else :
+# 		filesToSubmit.append(f)
 
 print "{0} files with bad output that should be deleted:".format(len(filesToDelete))		
 for f in filesToDelete:
