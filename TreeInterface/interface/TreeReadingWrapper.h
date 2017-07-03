@@ -22,6 +22,8 @@ public:
     file->Close();
     delete file;
   }
+  int getEntries() const {return tree->GetEntries();}
+
   //Load the next event from the tree....return false if there are no more events in the tree
   bool readEvent(unsigned int eventNumber, int reportFrequency = 1000000)
   {
