@@ -11,12 +11,12 @@
 class TreeReadingWrapper{
 public:
 	TreeReadingWrapper(std::string  fileName, std::string  treeName){
-    std::clog << "Loading file: "<< fileName <<" and tree: " << treeName <<std::endl;
+    std::cout << "Loading file: "<< fileName <<" and tree: " << treeName <<std::endl;
     file = TFile::Open(fileName.c_str(),"READ");
     assert(file);
     tree = (TTree*)(file->Get(treeName.c_str()) );
     assert(tree);
-    std::clog << tree->GetEntries() << " entries to process" << std::endl;
+    std::cout << tree->GetEntries() << " entries to process" << std::endl;
   }
   virtual ~TreeReadingWrapper(){
     file->Close();
@@ -29,7 +29,7 @@ public:
     tree->GetEntry(eventNumber);
 
     if(eventNumber%reportFrequency == 0)
-      std::clog << "Processing event " << eventNumber << std::endl;
+      std::cout << "Processing event " << eventNumber << std::endl;
     return true;
   }
 
@@ -42,7 +42,7 @@ public:
     }
     else {
       if(require) throw std::invalid_argument(( TString("TreeReadingWrapper::setBranchAddress could not load variable: " ) + tBranchName).Data() );
-      if(verbose)std::clog << " -" <<tBranchName;
+      if(verbose)std::cout << " -" <<tBranchName;
     }
   }
   template<typename varType>
@@ -60,7 +60,7 @@ public:
     }
     else {
       if(require) throw std::invalid_argument(( TString("TreeReadingWrapper::setBranchAddress could not load variable: " ) + tBranchName).Data() );
-      if(verbose)std::clog << " -" <<tBranchName;
+      if(verbose)std::cout << " -" <<tBranchName;
     }
   }
 
