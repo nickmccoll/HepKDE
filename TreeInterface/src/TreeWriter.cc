@@ -8,6 +8,11 @@ TreeWriter::TreeWriter(TString fileName, TString treeName, TString treeTitle)
   file = new TFile(fileName, "RECREATE");
   tree = new TreeWrapper(new TTree(treeName,treeTitle),treeName);
 }
+TreeWriter::TreeWriter(TFile * file_, TTree * tree_)
+{
+    file = file_;
+    tree = new TreeWrapper(tree_,tree_->GetName());
+}
 
 
 TreeWriter::~TreeWriter()

@@ -23,6 +23,7 @@ public:
     delete file;
   }
   int getEntries() const {return tree->GetEntries();}
+  TTree * getTree() {return tree;}
 
   //Load the next event from the tree....return false if there are no more events in the tree
   bool readEvent(unsigned int eventNumber, int reportFrequency = 1000000)
@@ -70,6 +71,7 @@ public:
   void setBranchAddress(const std::string varName, varType *var, bool require = false, bool verbose = true) {
 	  setBranchAddressPre("",varName,var,require,verbose);
   }
+
 
 
 private:

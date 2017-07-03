@@ -11,6 +11,9 @@ class TFile;
 class TreeWriter : public TreeWriterData {
   public:
   TreeWriter(TString fileName, TString treeName, TString treeTitle);
+  // TreeWriter will take ownership!!
+  // This is why the file is needed too
+  TreeWriter(TFile * file_, TTree * tree_);
 
   void book();
   void fillTree();
