@@ -11,12 +11,12 @@
 class TreeReadingWrapper{
 public:
 	TreeReadingWrapper(std::string  fileName, std::string  treeName){
-    std::cout << "Loading file: "<< fileName <<" and tree: " << treeName <<std::endl;
+    std::cout << " ++  Loading file: "<< fileName <<" and tree: " << treeName <<std::endl;
     file = TFile::Open(fileName.c_str(),"READ");
     assert(file);
     tree = (TTree*)(file->Get(treeName.c_str()) );
     assert(tree);
-    std::cout << tree->GetEntries() << " entries to process" << std::endl;
+    std::cout <<" ++  " << tree->GetEntries() << " entries to process" << std::endl;
   }
   virtual ~TreeReadingWrapper(){
     file->Close();
@@ -45,7 +45,7 @@ public:
     }
     else {
       if(require) throw std::invalid_argument(( TString("TreeReadingWrapper::setBranchAddress could not load variable: " ) + tBranchName).Data() );
-      if(verbose)std::cout << " -" <<tBranchName;
+      if(verbose)std::cout << "-" <<varName <<" ";
     }
   }
   template<typename varType>
@@ -63,7 +63,7 @@ public:
     }
     else {
       if(require) throw std::invalid_argument(( TString("TreeReadingWrapper::setBranchAddress could not load variable: " ) + tBranchName).Data() );
-      if(verbose)std::cout << " -" <<tBranchName;
+      if(verbose)std::cout << "-" <<varName <<" ";
     }
   }
 
