@@ -24,8 +24,8 @@ template<typename Thing>  static const Thing& get(Thing        const& thing)    
 //_____________________________________________________________________________
 // Angular properties
 //_____________________________________________________________________________
-double etaToTheta(const double& eta) {return 2.0*TMath::ATan(TMath::Exp(-eta));}
-double thetaToEta(const double& theta) {return -1*TMath::Log(TMath::Tan(theta/2));}
+inline double etaToTheta(const double& eta) {return 2.0*TMath::ATan(TMath::Exp(-eta));}
+inline double thetaToEta(const double& theta) {return -1*TMath::Log(TMath::Tan(theta/2));}
 
 inline double getEta(const double& eta)   { return eta;       }
 template<typename Thing>
