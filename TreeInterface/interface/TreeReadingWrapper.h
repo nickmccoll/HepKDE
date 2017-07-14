@@ -4,23 +4,50 @@
 #include <TFile.h>
 #include <TString.h>
 #include <TTree.h>
+#include <TChain.h>
 #include <assert.h>
 #include <iostream>
+#include <fstream>
 
 
 class TreeReadingWrapper{
 public:
 	TreeReadingWrapper(std::string  fileName, std::string  treeName){
     std::cout << " ++  Loading file: "<< fileName <<" and tree: " << treeName <<std::endl;
-    file = TFile::Open(fileName.c_str(),"READ");
-    assert(file);
-    tree = (TTree*)(file->Get(treeName.c_str()) );
-    assert(tree);
+    if(TString(fileName).EndsWith(".root")){
+        file = TFile::Open(fileName.c_str(),"READ");
+        assert(file);
+        tree = (TTree*)(file->Get(treeName.c_str()) );
+        assert(tree);
+    } else {
+
+        std::ifstream ifs (fileName);
+        if(!ifs.is_open())
+            throw std::invalid_argument("TreeReadingWrapper::TreeReadingWrapper could not open file! ");
+        std::string line;
+        TChain * chain = new TChain(treeName.c_str());
+        while ( std::getline (ifs,line) )
+         {
+            std::cout << " ++  Adding file: "<< line <<" to the tree."<<std::endl;
+            int readStatus = chain->Add(line.c_str(),0);
+            if(readStatus!=1)
+                throw std::invalid_argument("TreeReadingWrapper::TreeReadingWrapper could not open file! ");
+         }
+        ifs.close();
+        tree = chain;
+        file = 0;
+    }
+
     std::cout <<" ++  " << tree->GetEntries() << " entries to process" << std::endl;
   }
   virtual ~TreeReadingWrapper(){
-    file->Close();
-    delete file;
+    if(file){
+        file->Close();
+        delete file;
+    } else if(tree){
+        delete tree;
+    }
+
   }
   int getEntries() const {return tree->GetEntries();}
   TTree * getTree() {return tree;}
@@ -37,39 +64,43 @@ public:
   }
 
   template<typename varType>
-  void setBranchAddressPre(const std::string branchName, const std::string varName, varType **var, bool require = false, bool verbose = true) {
+  int setBranchAddressPre(const std::string branchName, const std::string varName, varType **var, bool require = false, bool verbose = true) {
       TString tBranchName = (branchName == "" ? varName : branchName + "_" + varName).c_str();
     if(tree->GetBranch(tBranchName)){
       tree->SetBranchStatus(tBranchName,1);
       tree->SetBranchAddress(tBranchName,var);
+      return 1;
     }
     else {
       if(require) throw std::invalid_argument(( TString("TreeReadingWrapper::setBranchAddress could not load variable: " ) + tBranchName).Data() );
       if(verbose)std::cout << "-" <<varName <<" ";
+      return 0;
     }
   }
   template<typename varType>
-  void setBranchAddress(const std::string varName, varType **var, bool require = false, bool verbose = true) {
-	  setBranchAddressPre("",varName,var,require,verbose);
+  int setBranchAddress(const std::string varName, varType **var, bool require = false, bool verbose = true) {
+	  return setBranchAddressPre("",varName,var,require,verbose);
   }
 
 
   template<typename varType>
-  void setBranchAddressPre(const std::string branchName, const std::string varName, varType *var, bool require = false, bool verbose = true) {
+  int setBranchAddressPre(const std::string branchName, const std::string varName, varType *var, bool require = false, bool verbose = true) {
     TString tBranchName = (branchName == "" ? varName : branchName + "_" + varName).c_str();
     if(tree->GetBranch(tBranchName)){
       tree->SetBranchStatus(tBranchName,1);
       tree->SetBranchAddress(tBranchName,var);
+      return 1;
     }
     else {
       if(require) throw std::invalid_argument(( TString("TreeReadingWrapper::setBranchAddress could not load variable: " ) + tBranchName).Data() );
       if(verbose)std::cout << "-" <<varName <<" ";
+      return 0;
     }
   }
 
   template<typename varType>
-  void setBranchAddress(const std::string varName, varType *var, bool require = false, bool verbose = true) {
-	  setBranchAddressPre("",varName,var,require,verbose);
+  int setBranchAddress(const std::string varName, varType *var, bool require = false, bool verbose = true) {
+	  return setBranchAddressPre("",varName,var,require,verbose);
   }
 
 
