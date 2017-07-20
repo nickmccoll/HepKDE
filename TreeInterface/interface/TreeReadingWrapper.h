@@ -37,7 +37,7 @@ public:
         tree = chain;
         file = 0;
     }
-
+    tree->SetBranchStatus("*",0);
     std::cout <<" ++  " << tree->GetEntries() << " entries to process" << std::endl;
   }
   virtual ~TreeReadingWrapper(){
