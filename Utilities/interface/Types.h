@@ -58,6 +58,22 @@ Target convertTo(Source source, const char name[], bool lenient = false, bool* g
 }
 
 
+//Class to contain a value and error
+template <typename ContType>
+class ValAndErr {
+public:
+    ValAndErr(): val_(0), err_(0) {};
+    ValAndErr(ContType val,ContType err ) : val_(val), err_(err) {};
+    void set(ContType val,ContType err) { val_ = val; err_ = err;}
+    ContType val() const {return val_;}
+    ContType err() const {return err_;}
+private:
+    ContType val_;
+    ContType err_;
+};
+typedef ValAndErr<float> ValAndErrF;
+
+
 };
 
 #endif
