@@ -16,9 +16,11 @@ public:
     std::cout << " ++  Loading file: "<< fileName <<" and tree: " << treeName <<std::endl;
     if(TString(fileName).EndsWith(".root")){
         file = TFile::Open(fileName.c_str(),"READ");
-        assert(file);
+        if(file == 0)
+            throw std::invalid_argument(std::string("TreeReadingWrapper::TreeReadingWrapper() -> could not open file ") + fileName );
         tree = (TTree*)(file->Get(treeName.c_str()) );
-        assert(tree);
+        if(tree == 0)
+            throw std::invalid_argument("TreeReadingWrapper::TreeReadingWrapper() -> could not open tree");
     } else {
 
         std::ifstream ifs (fileName);
