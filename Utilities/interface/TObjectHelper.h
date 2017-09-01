@@ -2,10 +2,9 @@
 #define ANALYSISSUPPORT_UTILITIES_INTERFACE_TOBJECTHELPER_H_
 #include <string>
 #include <iostream>
-#include "TH1.h"
-#include "TH2.h"
 #include "TFile.h"
-
+#include <TH1.h>
+#include <TH2.h>
 #include "Types.h"
 
 
@@ -28,10 +27,10 @@ std::unique_ptr<ObjType> getObject(TFile* file, const std::string& objName, cons
 TFile * getFile(const std::string& filename, std::string option = "READ", const bool verbose = false);
 
 //Containers of TObjects, they own the retreived object...feel free to delete the file after
-
 class Hist1DContainer {
 public:
     Hist1DContainer(TFile* file, const std::string& objName, const bool verbose =false );
+    ~Hist1DContainer(){}
     ASTypes::ValAndErrF getBinContentByBinNumber(const ASTypes::size ibin) const;
     //Ignores under and overflows!
     ASTypes::ValAndErrF getBinContentByValue(const float xval) const;
@@ -42,6 +41,7 @@ private:
 class Hist2DContainer {
 public:
     Hist2DContainer(TFile* file, const std::string& objName, const bool verbose =false );
+    ~Hist2DContainer(){}
     ASTypes::ValAndErrF getBinContentByBinNumber(const ASTypes::size ibinx,const ASTypes::size ibiny ) const;
     //Ignores under and overflows!
     ASTypes::ValAndErrF getBinContentByValue(const float xval,const float yval) const;
@@ -51,12 +51,4 @@ private:
 
 
 }
-
-
-
-
-
-
-
-
 #endif /* FRAMEWORK_PROCESSORS_INTERFACE_EVENTWEIGHTS_H_ */
