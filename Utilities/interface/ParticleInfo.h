@@ -84,6 +84,10 @@ bool isLastInChain(const Particle* particle, bool (*selectID)(int) = 0);
 template<typename ParticleRef>
 ParticleRef getFinal(ParticleRef particle, int maxNumDaughters = -1);
 
+/// Traces particle up the chain of radiation vertices to the first instance of the same particle.
+template<typename ParticleRef>
+ParticleRef getOriginal(ParticleRef particle);
+
 //// is a hadronically decaying w. caller may && with isLastInChain to count w.
 template<typename Particle>
 bool isGenWHadronic(const Particle* particle);
@@ -190,7 +194,10 @@ void printPackedGenParticleInfo(const Particle& genParticle, const int idx = 0);
 
 /// Inheritance
 template<typename Particle>
-bool hasMother(const Particle* genParticle, const int pid, bool checkCharge = false);
+bool hasMother(const Particle* genParticle, const int pid, bool checkCharge);
+
+template<typename Particle, typename Func>
+bool hasMother(const Particle* genParticle, Func test);
 
 template<typename Particle>
 const Particle* findMother(const Particle* genParticle, const int pid, bool checkCharge = false);

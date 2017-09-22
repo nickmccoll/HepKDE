@@ -91,6 +91,25 @@ ParticleRef ParticleInfo::getFinal(ParticleRef particle, int maxNumDaughters)
   return particle;
 }
 //_____________________________________________________________________________
+template<typename ParticleRef>
+ParticleRef ParticleInfo::getOriginal(ParticleRef particle)
+{
+  assert(!particle.isNull());
+
+  while (const unsigned numMothers = particle->numberOfMothers()) {
+    ParticleRef           chain;
+    for (unsigned iMom = 0; iMom < numMothers; ++iMom)
+      if (particle->mother(iMom)->pdgId() == particle->pdgId()) {
+        chain = ParticleRef(particle->motherRef(iMom).operator->(), particle->motherRef(iMom).key());
+        break;
+      }
+    if (chain.isNull())   break;
+    particle              = chain;
+  }
+
+  return particle;
+}
+//_____________________________________________________________________________
 template<typename Particle>
 bool ParticleInfo::isA(int particleID, const Particle* p, bool checkCharge)
 {
@@ -215,16 +234,20 @@ void ParticleInfo::printPackedGenParticleInfo(const Particle& genParticle, const
   printPackedGenParticleInfo(&genParticle, idx);
 }
 
+
+//_____________________________________________________________________________
+template<typename Particle, typename Func>
+bool ParticleInfo::hasMother(const Particle* genParticle, Func test) {
+  for(unsigned int iMom = 0; iMom < genParticle->numberOfMothers(); ++iMom) {
+      if(test(genParticle->mother(iMom)) ) return true;
+  }
+  return false;
+}
+
 //_____________________________________________________________________________
 template<typename Particle>
 bool ParticleInfo::hasMother(const Particle* genParticle, const int pid, bool checkCharge) {
-
-  for(unsigned int iMom = 0; iMom < genParticle->numberOfMothers(); ++iMom) {
-    if(isA(pid, genParticle->mother(iMom), checkCharge)) return true;
-  }
-
-  return false;
-
+    return hasMother(genParticle, [&](const Particle* p) -> bool {return isA(pid, p, checkCharge);});
 }
 
 //_____________________________________________________________________________
