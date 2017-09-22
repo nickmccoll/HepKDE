@@ -73,6 +73,23 @@ private:
 };
 typedef ValAndErr<float> ValAndErrF;
 
+template <typename ContType>
+class ValAndAssymErr {
+public:
+    ValAndAssymErr(): val_(0), errup_(0),errdown_(0) {};
+    ValAndAssymErr(ContType val,ContType errup,ContType errdown ) : val_(val), errup_(errup), errdown_(errdown) {};
+    void set(ContType val,ContType errup,ContType errdown) { val_ = val; errup_ = errup; errdown_ = errdown;}
+    ContType val() const {return val_;}
+    ContType err() const {return (errup_+errdown_)/2.0;}
+    ContType errup() const {return errup_;}
+    ContType errdown() const {return errdown_;}
+private:
+    ContType val_;
+    ContType errup_;
+    ContType errdown_;
+};
+typedef ValAndAssymErr<float> ValAndAssymErrF;
+
 
 };
 
