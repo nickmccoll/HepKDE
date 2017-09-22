@@ -45,4 +45,22 @@ ASTypes::ValAndErrF Hist2DContainer:: getBinContentByValue(const float xval,cons
 }
 
 
+GraphAEContainer::GraphAEContainer(TFile* file, const std::string& objName, const bool verbose) :
+    hist(getObjectNoOwn<TGraphAsymmErrors>(file,objName,verbose))
+{
+    nBins = hist->GetN();
+    if(!nBins) throw std::invalid_argument("GraphAEContainer::GraphAEContainer() -> Graph has no points! ");
+    min =  hist->GetX()[0] - hist->GetEXlow()[0];
+    max =  hist->GetX()[nBins -1] + hist->GetEXhigh()[nBins -1];
+}
+ASTypes::ValAndAssymErrF GraphAEContainer::getBinContentByBinNumber(ASTypes::size  ibin) const {
+    ibin = (ibin >= nBins ? nBins -1 : ibin);
+    return ASTypes::ValAndAssymErrF(hist->GetY()[ibin],hist->GetEYhigh()[ibin],hist->GetEYlow()[ibin]  );
+}
+float GraphAEContainer::eval(float xval) const {
+    xval = std::max(std::min(xval,max),min);
+    return hist->Eval(xval);
+}
+
+
 }
