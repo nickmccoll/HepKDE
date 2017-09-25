@@ -87,6 +87,8 @@ ParticleRef getFinal(ParticleRef particle, int maxNumDaughters = -1);
 /// Traces particle up the chain of radiation vertices to the first instance of the same particle.
 template<typename ParticleRef>
 ParticleRef getOriginal(ParticleRef particle);
+template<typename Particle>
+const Particle* getOriginal(const Particle* particle);
 
 //// is a hadronically decaying w. caller may && with isLastInChain to count w.
 template<typename Particle>
