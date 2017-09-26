@@ -273,19 +273,43 @@ void trash(std::map<Key,Object*>& objects);
 //_____________________________________________________________________________
 // Filters a collection into a vector of pointers
 //_____________________________________________________________________________
-template <typename Obj>
-std::vector<Obj*> filterObjects(std::vector<Obj>& objs, const double minPT = 0, const double maxEta = 999, bool (*test)(const Obj&) = 0) {
-  const ASTypes::size          numObjects    = objs.size();
-  std::vector<Obj*>   outObjs;
-  outObjs.reserve(numObjects);
-  for(auto& obj : objs){
-    if (obj.pt()    < minPT )            continue;
-    if (TMath::Abs(obj.eta()) > maxEta)  continue;
-    if (test && !(*test)(obj))     continue;
-    outObjs.push_back(&obj);
-  }
-  return outObjs;
+template<typename Obj, typename Func>
+std::vector<const Obj*> selObjs(const std::vector<Obj>& objs, Func test){
+    std::vector<const Obj*>  outObjs;
+    outObjs.reserve(objs.size());
+    for(const auto& obj : objs){
+        if(test(&obj) ) outObjs.push_back(&obj);
+    }
 }
+template<typename Obj, typename Func>
+std::vector<const Obj*> selObjsD(const std::vector<const Obj*>& objs, Func test){
+    std::vector<const Obj*>  outObjs;
+    outObjs.reserve(objs.size());
+    for(const auto* obj : objs){
+        if(test(obj) ) outObjs.push_back(obj);
+    }
+}
+
+template<typename Obj>
+std::vector<const Obj*> selObjsMom(const std::vector<Obj>& objs, const double minPT)
+{ return selObjs(objs, [&](const Obj* o){return o->pt()  >= minPT; }  );}
+template<typename Obj>
+std::vector<const Obj*> selObjsMom(const std::vector<Obj>& objs, const double minPT, const double maxETA)
+{ return selObjs(objs, [&](const Obj* o){return o->pt()  >= minPT && std::fabs(o->eta()) < maxETA; });}
+template<typename Obj, typename Func>
+std::vector<const Obj*> selObjsMom(const std::vector<Obj>& objs, const double minPT, const double maxETA, Func test)
+{ return selObjs(objs, [&](const Obj* o){return o->pt()  >= minPT && std::fabs(o->eta()) < maxETA && test(o); });}
+
+template<typename Obj>
+std::vector<const Obj*> selObjsMomD(const std::vector<const Obj*>& objs, const double minPT)
+{ return selObjsD(objs, [&](const Obj* o){return o->pt()  >= minPT; }  );}
+template<typename Obj>
+std::vector<const Obj*> selObjsMomD(const std::vector<const Obj*>& objs, const double minPT, const double maxETA)
+{ return selObjsD(objs, [&](const Obj* o){return o->pt()  >= minPT && std::fabs(o->eta()) < maxETA; });}
+template<typename Obj, typename Func>
+std::vector<const Obj*> selObjsMomD(const std::vector<const Obj*>& objs, const double minPT, const double maxETA, Func test)
+{ return selObjsD(objs, [&](const Obj* o){return o->pt()  >= minPT && std::fabs(o->eta()) < maxETA && test(o); });}
+
 
 //_____________________________________________________________________________
 // Finding objects in a group
