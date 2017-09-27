@@ -280,6 +280,7 @@ std::vector<const Obj*> selObjs(const std::vector<Obj>& objs, Func test){
     for(const auto& obj : objs){
         if(test(&obj) ) outObjs.push_back(&obj);
     }
+    return outObjs;
 }
 template<typename Obj, typename Func>
 std::vector<const Obj*> selObjsD(const std::vector<const Obj*>& objs, Func test){
@@ -288,6 +289,7 @@ std::vector<const Obj*> selObjsD(const std::vector<const Obj*>& objs, Func test)
     for(const auto* obj : objs){
         if(test(obj) ) outObjs.push_back(obj);
     }
+    return outObjs;
 }
 
 template<typename Obj>
