@@ -63,4 +63,10 @@ float GraphAEContainer::eval(float xval) const {
 }
 
 
+TF1Container::TF1Container(TFile* file, const std::string& objName, const bool verbose) :
+    hist(getObjectNoOwn<TF1>(file,objName,verbose))
+{}
+float TF1Container::eval(float xval) const { return hist->Eval(xval);}
+
+
 }

@@ -5,6 +5,7 @@
 #include "TFile.h"
 #include <TH1.h>
 #include <TH2.h>
+#include <TF1.h>
 #include <TGraphAsymmErrors.h>
 #include "Types.h"
 
@@ -77,6 +78,14 @@ private:
     ASTypes::size nBins;
     float min;
     float max;
+};
+class TF1Container {
+public:
+    TF1Container(TFile* file, const std::string& objName, const bool verbose =false );
+    ~TF1Container(){}
+    float eval(float xval) const;
+private:
+    std::unique_ptr<TF1> hist;
 };
 
 
