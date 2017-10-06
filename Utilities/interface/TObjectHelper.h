@@ -7,6 +7,7 @@
 #include <TH2.h>
 #include <TF1.h>
 #include <TGraphAsymmErrors.h>
+#include <TGraphErrors.h>
 #include "Types.h"
 
 
@@ -65,9 +66,41 @@ public:
 private:
     std::unique_ptr<TH2> hist;
 };
+class GraphContainer {
+public:
+    //If useCustomLimits is true take min and max from the constructor
+    GraphContainer(TFile* file, const std::string& objName, const bool useCustomLimits = false, const float min=0, const float max =1, const bool verbose =false );
+    ~GraphContainer(){}
+
+    float getBinContentByBinNumber(const ASTypes::size ibin) const;
+    //Ignores under and overflows!
+    float eval(float xval) const;
+private:
+    std::unique_ptr<TGraph> hist;
+    ASTypes::size nBins;
+    float min_;
+    float max_;
+};
+class GraphEContainer {
+public:
+    //If useCustomLimits is true take min and max from the constructor
+    GraphEContainer(TFile* file, const std::string& objName, const bool useCustomLimits = false, const float min=0, const float max =1, const bool verbose =false );
+    ~GraphEContainer(){}
+
+    ASTypes::ValAndErrF getBinContentByBinNumber(const ASTypes::size ibin) const;
+    //Ignores under and overflows!
+    float eval(float xval) const;
+private:
+    std::unique_ptr<TGraphErrors> hist;
+    ASTypes::size nBins;
+    float min_;
+    float max_;
+};
+
 class GraphAEContainer {
 public:
-    GraphAEContainer(TFile* file, const std::string& objName, const bool verbose =false );
+    //If useCustomLimits is true take min and max from the constructor
+    GraphAEContainer(TFile* file, const std::string& objName, const bool useCustomLimits = false, const float min=0, const float max =1, const bool verbose =false );
     ~GraphAEContainer(){}
 
     ASTypes::ValAndAssymErrF getBinContentByBinNumber(const ASTypes::size ibin) const;
@@ -76,16 +109,20 @@ public:
 private:
     std::unique_ptr<TGraphAsymmErrors> hist;
     ASTypes::size nBins;
-    float min;
-    float max;
+    float min_;
+    float max_;
 };
+
 class TF1Container {
 public:
-    TF1Container(TFile* file, const std::string& objName, const bool verbose =false );
+    TF1Container(TFile* file, const std::string& objName,const bool useCustomLimits = false, const float min=0, const float max =1, const bool verbose =false );
     ~TF1Container(){}
     float eval(float xval) const;
 private:
     std::unique_ptr<TF1> hist;
+    bool useCustomLimits;
+    float min_;
+    float max_;
 };
 
 
