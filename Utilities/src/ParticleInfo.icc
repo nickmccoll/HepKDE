@@ -91,6 +91,26 @@ ParticleRef ParticleInfo::getFinal(ParticleRef particle, int maxNumDaughters)
   return particle;
 }
 //_____________________________________________________________________________
+template<typename Particle>
+const Particle* ParticleInfo::getFinal(const Particle* particle, int maxNumDaughters)
+{
+  while (const unsigned numDaughters = particle->numberOfDaughters()) {
+    if (maxNumDaughters > 0 && int(numDaughters) > maxNumDaughters)
+      break;
+
+    const Particle *           chain =0;
+    for (unsigned iDau = 0; iDau < numDaughters; ++iDau)
+      if (particle->daughter(iDau)->pdgId() == particle->pdgId()) {
+        chain = particle->daughter(iDau);
+        break;
+      }
+    if (chain == 0)   break;
+    particle              = chain;
+  }
+
+  return particle;
+}
+//_____________________________________________________________________________
 template<typename ParticleRef>
 ParticleRef ParticleInfo::getOriginal(ParticleRef particle)
 {

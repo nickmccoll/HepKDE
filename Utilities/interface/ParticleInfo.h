@@ -83,6 +83,8 @@ bool isLastInChain(const Particle* particle, bool (*selectID)(int) = 0);
 /// Traces particle down the chain of radiation vertices to the last instance of the same particle.
 template<typename ParticleRef>
 ParticleRef getFinal(ParticleRef particle, int maxNumDaughters = -1);
+template<typename Particle>
+const Particle* getFinal(const Particle* particle, int maxNumDaughters = -1);
 
 /// Traces particle up the chain of radiation vertices to the first instance of the same particle.
 template<typename ParticleRef>
