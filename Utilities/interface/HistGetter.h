@@ -7,6 +7,7 @@
 #include <TH2F.h>
 #include <assert.h>
 #include <iostream>
+#include <map>
 
 class HistGetter {
 public:
