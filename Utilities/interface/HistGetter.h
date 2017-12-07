@@ -11,6 +11,17 @@
 
 class HistGetter {
 public:
+    //-------------------------------- Add existing------------------------------------------------------------------
+    void add1D(TH1* hist) {
+        get1D(hist->GetName(),true);
+        addHist(hist->GetName());
+        hists.push_back( hist );
+    }
+    void add2D(TH2* hist) {
+        get2D(hist->GetName(),true);
+        addHist2D(hist->GetName());
+        hist2Ds.push_back( hist );
+    }
     //-------------------------------- Get Or Make ------------------------------------------------------------------
     TH1 * getOrMake1D(const char *name, const char *title, Int_t nbinsx, Double_t xlow, Double_t xup) {
         TH1 * h = get1D(name,false);
