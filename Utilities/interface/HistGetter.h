@@ -3,6 +3,7 @@
 
 #include <TFile.h>
 #include <TString.h>
+#include <TGraph.h>
 #include <TH1F.h>
 #include <TH2F.h>
 #include <assert.h>
@@ -13,14 +14,16 @@ class HistGetter {
 public:
     //-------------------------------- Add existing------------------------------------------------------------------
     void add1D(TH1* hist) {
-        get1D(hist->GetName(),true);
         addHist(hist->GetName());
         hists.push_back( hist );
     }
     void add2D(TH2* hist) {
-        get2D(hist->GetName(),true);
         addHist2D(hist->GetName());
         hist2Ds.push_back( hist );
+    }
+    void addGraph(TGraph* hist) {
+        addGraph(hist->GetName());
+        graphs.push_back( hist );
     }
     //-------------------------------- Get Or Make ------------------------------------------------------------------
     TH1 * getOrMake1D(const char *name, const char *title, Int_t nbinsx, Double_t xlow, Double_t xup) {
@@ -221,6 +224,7 @@ public:
         file->cd();
         for(auto * h : hists) h->Write();
         for(auto * h : hist2Ds) h->Write();
+        for(auto * h : graphs) h->Write();
         file->Close();
         delete file;
     }
@@ -239,12 +243,21 @@ private:
         }
         hist2DsMap[name] = hist2Ds.size();
     }
+    void addGraph(std::string name){
+        if(graphMap.count(name)){
+            throw std::invalid_argument("You already tried to book a graph with name: " + name);
+        }
+        graphMap[name] = graphs.size();
+    }
+
 
     std::vector<TH1*> hists;
     std::vector<TH2*> hist2Ds;
+    std::vector<TGraph*> graphs;
 
     std::map<std::string,unsigned int> histsMap;
     std::map<std::string,unsigned int> hist2DsMap;
+    std::map<std::string,unsigned int> graphMap;
 };
 
 #endif
