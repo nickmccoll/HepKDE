@@ -146,12 +146,16 @@ void KDEProducer::buildPilotKDE(const unsigned int nXBins, const double xMin,
 
 }
 //--------------------------------------------------------------------------------------------------
-double KDEProducer::getADensity(const double x) const {
+double KDEProducer::getADensity(const double x, double* weight) const {
     double dens = 0;
+    double sumW2 =0;
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
         const double delt = (x - (*xvals)[iX]);
-        dens += (*weights)[iX]*(*inv_his)[iX]*std::exp(-0.5*delt*delt*(*inv_his)[iX]*(*inv_his)[iX]);
+        const double wt = (*weights)[iX]*(*inv_his)[iX]*std::exp(-0.5*delt*delt*(*inv_his)[iX]*(*inv_his)[iX]);
+        dens += wt;
+        sumW2 += wt*wt;
     }
+    if(weight) (*weight) = oneOverRootTwoPi*oneOverNEvt*std::sqrt(sumW2);
     return dens*oneOverRootTwoPi*oneOverNEvt;
 }
 //--------------------------------------------------------------------------------------------------
@@ -163,28 +167,38 @@ double KDEProducer::geometricMean() const
     return std::exp(sumTerms*oneOverNEvt);
 }
 //--------------------------------------------------------------------------------------------------
-double KDEProducer::getDensity(const double x) const {
+double KDEProducer::getDensity(const double x, double* weight) const {
     double dens = 0;
+    double sumW2 =0;
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
         const double delt = (x - (*xvals)[iX]);
-        dens += (*weights)[iX]*std::exp(oneOverTwoNegh0Sq*delt*delt);
+        const double wt = (*weights)[iX]*std::exp(oneOverTwoNegh0Sq*delt*delt);
+        dens += wt;
+        sumW2 += wt*wt;
     }
+    if(weight) (*weight) = oneOverRootTwoPi*oneOverh0*oneOverNEvt*std::sqrt(sumW2);
     return dens*oneOverRootTwoPi*oneOverh0*oneOverNEvt;
 }
 //--------------------------------------------------------------------------------------------------
 TH1* KDEProducer::getPDF(const std::string& name, const std::string& title,
         const int unsigned nBins, const float xMin, const float xMax) const {
     TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,xMin,xMax);
-    for(unsigned int iB = 1; iB <= nBins; ++iB)
-        h->SetBinContent(iB,getDensity(h->GetBinCenter(iB)));
+    double weight;
+    for(unsigned int iB = 1; iB <= nBins; ++iB){
+        h->SetBinContent(iB,getDensity(h->GetBinCenter(iB),&weight));
+        h->SetBinError(iB,weight);
+    }
     return h;
 }
 //--------------------------------------------------------------------------------------------------
 TH1* KDEProducer::getAPDF(const std::string& name, const std::string& title,
         const unsigned int nBins, const float xMin, const float xMax) const {
     TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,xMin,xMax);
-    for(unsigned int iB = 1; iB <= nBins; ++iB)
-        h->SetBinContent(iB,getADensity(h->GetBinCenter(iB)));
+    double weight;
+    for(unsigned int iB = 1; iB <= nBins; ++iB){
+        h->SetBinContent(iB,getADensity(h->GetBinCenter(iB),&weight));
+        h->SetBinError(iB,weight);
+    }
     return h;
 }
 //--------------------------------------------------------------------------------------------------

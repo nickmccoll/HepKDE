@@ -126,15 +126,19 @@ std::vector<double>* KDEProducer2D::make_invHs(const double oneOverH0, TH2 * loc
     return inv_his;
 }
 //--------------------------------------------------------------------------------------------------
-double KDEProducer2D::getADensity(const double x,const double y) const {
+double KDEProducer2D::getADensity(const double x,const double y, double* weight) const {
     double dens = 0;
+    double sumW2 = 0;
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
         const double deltX = (x - (*xvals)[iX]);
         const double deltY = (y - (*yvals)[iX]);
-        dens += (*weights)[iX]*(*inv_hxis)[iX]*(*inv_hyis)[iX]*
+        const double wt = (*weights)[iX]*(*inv_hxis)[iX]*(*inv_hyis)[iX]*
                 std::exp(-0.5*deltX*deltX*(*inv_hxis)[iX]*(*inv_hxis)[iX] +
                         -0.5*deltY*deltY*(*inv_hyis)[iX]*(*inv_hyis)[iX]);
+        dens += wt;
+        sumW2 += wt*wt;
     }
+    if(weight) *weight = oneOverTwoPi*oneOverNEvt*std::sqrt(sumW2);
     return dens*oneOverTwoPi*oneOverNEvt;
 }
 //--------------------------------------------------------------------------------------------------
@@ -149,13 +153,17 @@ double KDEProducer2D::geometricMean(const std::vector<double> * vals) const
     return std::exp(sumTerms*oneOverNEvt);
 }
 //--------------------------------------------------------------------------------------------------
-double KDEProducer2D::getDensity(const double x,const double y) const {
+double KDEProducer2D::getDensity(const double x,const double y, double* weight) const {
     double dens = 0;
+    double sumW2 = 0;
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
         const double deltX = (x - (*xvals)[iX]);
         const double deltY = (y - (*yvals)[iX]);
-        dens += (*weights)[iX]*std::exp(oneOverTwoNegh0XSq*deltX*deltX+oneOverTwoNegh0YSq*deltY*deltY);
+        const double wt = (*weights)[iX]*std::exp(oneOverTwoNegh0XSq*deltX*deltX+oneOverTwoNegh0YSq*deltY*deltY);
+        dens += wt;
+        sumW2 += wt*wt;
     }
+    if(weight) *weight = oneOverTwoPi*oneOverh0X*oneOverh0Y*oneOverNEvt*std::sqrt(sumW2);
     return dens*oneOverTwoPi*oneOverh0X*oneOverh0Y*oneOverNEvt;
 }
 //--------------------------------------------------------------------------------------------------
@@ -164,11 +172,14 @@ TH2* KDEProducer2D::getPDF(const std::string& name, const std::string& title,
         const int unsigned nYBins, const float yMin, const float yMax
         ) const {
     TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
+    double weight;
     for(unsigned int iX = 1; iX <= nXBins; ++iX)
-        for(unsigned int iY = 1; iY <= nYBins; ++iY)
+        for(unsigned int iY = 1; iY <= nYBins; ++iY){
         h->SetBinContent(iX,iY,
-                getDensity(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY))
+                getDensity(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY),&weight)
                 );
+        h->SetBinError(iX,iY,weight);
+        }
     return h;
 }
 //--------------------------------------------------------------------------------------------------
@@ -176,11 +187,14 @@ TH2* KDEProducer2D::getAPDF(const std::string& name, const std::string& title,
         const unsigned int nXBins, const float xMin, const float xMax,
         const unsigned int nYBins, const float yMin, const float yMax) const {
     TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
+    double weight;
     for(unsigned int iX = 1; iX <= nXBins; ++iX)
-        for(unsigned int iY = 1; iY <= nYBins; ++iY)
+        for(unsigned int iY = 1; iY <= nYBins; ++iY){
         h->SetBinContent(iX,iY,
-                getADensity(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY))
+                getADensity(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY),&weight)
                 );
+        h->SetBinError(iX,iY,weight);
+        }
     return h;
 }
 //--------------------------------------------------------------------------------------------------

@@ -22,9 +22,9 @@ public:
     );
     ~KDEProducer2D() {};
     //get non adaptive density at point y
-    double getDensity(const double x,const double y)const ;
+    double getDensity(const double x,const double y, double* weight=0)const ;
     //get adaptive density at point x
-    double getADensity(const double x,const double y) const;
+    double getADensity(const double x,const double y, double* weight=0) const;
     //Get local variance in one direction
     double getLocalVarX(const double x, const double y)const ;
     double getLocalVarY(const double x, const double y)const ;

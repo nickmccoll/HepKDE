@@ -21,9 +21,9 @@ public:
     double getH0() const {return h0;}
 
     //get non adaptive density at point x
-    double getDensity(const double x)const ;
+    double getDensity(const double x, double* weight=0)const ;
     //get adaptive density at point x
-    double getADensity(const double x) const;
+    double getADensity(const double x, double* weight=0) const;
     //get local variance
     double getLocalVariance(const double x)const ;
 
