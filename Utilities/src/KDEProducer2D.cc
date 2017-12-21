@@ -7,13 +7,13 @@
 #include "TH1F.h"
 //--------------------------------------------------------------------------------------------------
 KDEProducer2D::KDEProducer2D(const std::vector<double> * xvals,const std::vector<double> * yvals, const std::vector<double> * weights,
-        const double hxSF, const unsigned int nXBins, const double xMin, const double xMax,
-        const double hySF, const unsigned int nYBins, const double yMin, const double yMax,
-       const double trimFactor,const bool doSigmaScaling)
+        const double hxSF,  const unsigned int nXBins, const double xMin, const double xMax,const double trimFactorX,
+        const double hySF, const unsigned int nYBins, const double yMin, const double yMax, const double trimFactorY,
+        const bool doSigmaScaling)
         : xvals(xvals),yvals(yvals),weights(weights),nDataPts(xvals->size()), oneOverTwoPi(1./TMath::TwoPi())//,oneOverRTTwoPi(std::sqrt(oneOverTwoPi))
 {
     computeGlobalQuantities(hxSF,hySF);
-    if(nXBins > 0) buildPilotKDE(nXBins,xMin,xMax,nYBins,yMin,yMax,trimFactor,doSigmaScaling);
+    if(nXBins > 0) buildPilotKDE(nXBins,xMin,xMax,trimFactorX,nYBins,yMin,yMax,trimFactorY,doSigmaScaling);
 }
 //--------------------------------------------------------------------------------------------------
 void KDEProducer2D::computeGlobalQuantities(const double hSFX,const double hSFY) {
@@ -55,16 +55,16 @@ void KDEProducer2D::computeGlobalQuantities(const double hSFX,const double hSFY)
 }
 //--------------------------------------------------------------------------------------------------
 void KDEProducer2D::buildPilotKDE(const unsigned int nXBins, const double xMin,
-        const double xMax,const unsigned int nYBins, const double yMin,
-        const double yMax, const double trimFactor,const bool doSigmaScaling) {
+        const double xMax,const double trimFactorX, const unsigned int nYBins, const double yMin,
+        const double yMax, const double trimFactorY,const bool doSigmaScaling) {
     //For speed, the pilot density will be computed
     //in a grid, set by the histogram bin centers
     pilotKDE.reset(getPDF("pilotKDE","; pilot KDE",nXBins,xMin,xMax,nYBins,yMin,yMax));
     localVarX.reset(getLocalVarX("localVarX",";local var",nXBins,xMin,xMax,nYBins,yMin,yMax));
     localVarY.reset(getLocalVarY("localVarY",";local var",nXBins,xMin,xMax,nYBins,yMin,yMax));
     //store the inverse of the bandwidths for spead
-    inv_hxis.reset(make_invHs(oneOverh0X,localVarX.get(),trimFactor,doSigmaScaling) );
-    inv_hyis.reset(make_invHs(oneOverh0Y,localVarY.get(),trimFactor,doSigmaScaling));
+    inv_hxis.reset(make_invHs(oneOverh0X,localVarX.get(),trimFactorX,doSigmaScaling) );
+    inv_hyis.reset(make_invHs(oneOverh0Y,localVarY.get(),trimFactorY,doSigmaScaling));
 }
 //--------------------------------------------------------------------------------------------------
 std::vector<double>* KDEProducer2D::make_invHs(const double oneOverH0, TH2 * localVar,

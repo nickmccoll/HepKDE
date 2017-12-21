@@ -16,9 +16,9 @@ public:
     // Trim higher ones to this value...negative for no trimming
     // doSigmaScaling -> apply variance scaling to the adaptive factors
     KDEProducer2D(const std::vector<double> * xvals,const std::vector<double> * yvals, const std::vector<double> * weights,
-            const double hxSF, const unsigned int nXBins, const double xMin, const double xMax,
-            const double hySF, const unsigned int nYBins, const double yMin, const double yMax,
-           const double trimFactor,const bool doSigmaScaling
+            const double hxSF, const unsigned int nXBins, const double xMin, const double xMax,const double trimFactorX,
+            const double hySF, const unsigned int nYBins, const double yMin, const double yMax,const double trimFactorY,
+           const bool doSigmaScaling
     );
     ~KDEProducer2D() {};
     //get non adaptive density at point y
@@ -58,9 +58,9 @@ public:
     //calculates nEvt and h0
     void computeGlobalQuantities(const double hSFX,const double hSFY);
     //For the first iteration
-    void buildPilotKDE(const unsigned int nXBins, const double xMin, const double xMax,
+    void buildPilotKDE(const unsigned int nXBins, const double xMin, const double xMax,const double trimFactorX,
             const unsigned int nYBins, const double yMin, const double yMax,
-            const double trimFactor,const bool doSigmaScaling);
+            const double trimFactorY,const bool doSigmaScaling);
     // weighted geometric mean
     double geometricMean(const std::vector<double> * vals) const;
 
