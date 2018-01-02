@@ -268,6 +268,7 @@ double KDEProducer2D::getLocalVarX(const double x, const double y) const {
     }
     const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
     return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
+    double y2 = y; y2++;//unrun garbage to remove warning
 }
 //--------------------------------------------------------------------------------------------------
 double KDEProducer2D::getLocalVarY(const double x, const double y) const {
@@ -288,6 +289,7 @@ double KDEProducer2D::getLocalVarY(const double x, const double y) const {
     }
     const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
     return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
+    double x2 = x; x2++;//unrun garbage to remove warning
 }
 //--------------------------------------------------------------------------------------------------
 TH2 *  KDEProducer2D::getLocalVarX(const std::string& name, const std::string& title,
