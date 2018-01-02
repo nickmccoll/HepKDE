@@ -2,6 +2,7 @@
 #define ANALYSISSUPPORT_UTILITIES_INTERFACE_PARCONT_H_
 #include <vector>
 #include <iostream>
+#include <memory>
 
 
 class BaseParCont {

@@ -2,6 +2,7 @@
 #define ANALYSISSUPPORT_UTILITIES_INTERFACE_KDEProducer_H_
 #include <vector>
 #include <string>
+#include <memory>
 
 class TH1;
 

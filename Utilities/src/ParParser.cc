@@ -2,7 +2,7 @@
 
 #include <sstream>
 #include <iostream>
-
+#include <iterator>
 
 std::shared_ptr<bool>        ParParser::addBool(const std::string label, const std::string& desc) {
     auto ptr = new BoolCont(label,desc);
