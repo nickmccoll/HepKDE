@@ -14,14 +14,15 @@
 namespace TObjectHelper {
 //Gets object from file and takes ownership (e.g. TH1)
 template <typename ObjType>
-std::unique_ptr<ObjType> getObject(TFile* file, const std::string& objName, const bool verbose =false ) {
+std::unique_ptr<ObjType> getObject(TFile* file, const std::string& objName, const bool verbose =false, const bool force = true ) {
     if(verbose){
         std::cout << " ++  getting object "<<objName<<std::endl;
     }
     ObjType * obj = 0;
     file->GetObject(objName.c_str(), obj);
     if(obj == 0){
-        throw std::invalid_argument(std::string("TObjectHelper::getObject() -> could not open object ") + objName );
+        if(force) throw std::invalid_argument(std::string("TObjectHelper::getObject() -> could not open object ") + objName );
+        else return std::unique_ptr<ObjType>();
     }
     obj->SetDirectory(0);
     return std::unique_ptr<ObjType>(obj);
