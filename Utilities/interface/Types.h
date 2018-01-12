@@ -3,6 +3,8 @@
 
 #include<iostream>
 #include<string>
+#include <iomanip>
+#include <sstream>
 
 #include <Math/PtEtaPhiE4D.h>
 #include <Math/PtEtaPhiM4D.h>
@@ -90,6 +92,14 @@ private:
 };
 typedef ValAndAssymErr<float> ValAndAssymErrF;
 
+
+//Conversion
+std::string flt2Str(double val, int pre = -1){
+std::stringstream stream;
+if(pre > -1) stream << std::fixed << std::setprecision(pre) << val;
+else stream << val;
+return stream.str();
+}
 
 };
 
