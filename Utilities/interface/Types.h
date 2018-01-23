@@ -94,10 +94,15 @@ typedef ValAndAssymErr<float> ValAndAssymErrF;
 
 
 //Conversion
-std::string flt2Str(double val, int pre = -1){
+inline std::string flt2Str(double val, int pre = -1){
 std::stringstream stream;
 if(pre > -1) stream << std::fixed << std::setprecision(pre) << val;
 else stream << val;
+return stream.str();
+}
+inline std::string int2Str(int val){
+std::stringstream stream;
+stream << val;
 return stream.str();
 }
 
