@@ -37,6 +37,7 @@ class BoolCont : public BaseParCont{
 public:
     BoolCont(const std::string& label, const std::string& desc);
     void print(std::ostream& where) const override;
+    bool fill( const std::string& val) override {return val != "";}
     void fill() override;
     std::shared_ptr<bool> value;
 };
@@ -46,6 +47,7 @@ public:
     FloatCont(const std::string& label, const std::string& desc, bool isRequired, double defaultValue);
     void print(std::ostream& where) const override;
     bool fill( const std::string& val) override;
+    virtual void fill() override {}
     std::shared_ptr<double> value;
 };
 class IntCont : public BaseParCont{
@@ -53,6 +55,7 @@ public:
     IntCont(const std::string& label, const std::string& desc, bool isRequired, int defaultValue);
     void print(std::ostream& where) const override;
     bool fill( const std::string& val) override;
+    virtual void fill() override {}
     std::shared_ptr<int> value;
 };
 class StringCont : public BaseParCont{
@@ -60,6 +63,7 @@ public:
     StringCont(const std::string& label, const std::string& desc, bool isRequired, const std::string& defaultValue);
     void print(std::ostream& where) const override;
     bool fill( const std::string& val) override;
+    virtual void fill() override {}
     std::shared_ptr<std::string> value;
 };
 
@@ -68,6 +72,7 @@ public:
     VFloatCont(const std::string& label, const std::string& desc, bool isRequired, const std::vector<double>& defaultValue);
     void print(std::ostream& where) const override;
     bool fill( const std::string& val) override;
+    virtual void fill() override {}
     std::shared_ptr<std::vector<double> > value;
 };
 
@@ -76,6 +81,7 @@ public:
     VIntCont(const std::string& label, const std::string& desc, bool isRequired, const std::vector<int>& defaultValue);
     void print(std::ostream& where) const override;
     bool fill( const std::string& val) override;
+    virtual void fill() override {}
     std::shared_ptr<std::vector<int> > value;
 };
 
