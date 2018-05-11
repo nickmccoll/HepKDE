@@ -106,6 +106,13 @@ stream << val;
 return stream.str();
 }
 
+template<typename CompType>
+inline bool strFind(const std::string& checkStr, const CompType& subStrToFind){
+    return checkStr.find(subStrToFind) != std::string::npos;
+}
+
+
+
 };
 
 #endif
