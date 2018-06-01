@@ -4,7 +4,7 @@ cfgfile=$1
 outputdir=$2
 outputname=$3
 maxevents=$4
-scramdir=$5
+CMSSWVERS=$5
 
 workdir=`pwd`
 
@@ -16,13 +16,17 @@ echo "args: $*"
 ls -l
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-cd $scramdir/src/
-SCRAM_ARCH=slc6_amd64_gcc491
-eval `scramv1 runtime -sh`
-cd $workdir
+SCRAM_ARCH=slc6_amd64_gcc530
+eval `scramv1 project CMSSW ${CMSSWVERS}`
 
-cp ${scramdir}/${cfgfile} .
-cp ${scramdir}/${filename} .
+tar -xf cmssw.tar.gz -C ${CMSSWVERS}/src --warning=no-timestamp
+rm cmssw.tar.gz
+
+cd ${CMSSWVERS}/src/
+eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers
+scramv1 build
+echo "CMSSW: "$CMSSW_BASE
+cd $workdir
 
 cmsRun $cfgfile print outputFile=${outputname} nEvents=${maxevents}
 

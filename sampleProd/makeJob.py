@@ -13,6 +13,7 @@ parser.add_argument("-j", "--jobdir", dest="jobdir", default="jobs", help="Direc
 parser.add_argument("-nf", "--numFiles", dest="numfiles", type=int, default=5, help="Number of files per job. [Default: 5]")
 parser.add_argument("-o", "--outdir", dest="outdir", default="/eos/uscms/store/user/${USER}/13TeV/processed", help="Output directory for ntuples. [Default: \"/eos/uscms/store/user/${USER}/13TeV/ntuples\"]")
 parser.add_argument("-of", "--outFormat", dest="outFormat", default="job_JOBNUM.root", help="Output fole format, JOBNUM will be replaced with the job number. [Default: \"job_JOBNUM.root\"]")
+parser.add_argument("-cmsswv", "--cmsswv", dest="cmsswv", default="CMSSW_9_3_7", help="CMSSW version. [Default: \CMSSW_9_3_7\"]")
 args = parser.parse_args()
 
 script = "runJob.sh"
@@ -61,21 +62,21 @@ Requirements            = (Arch == "X86_64") && (OpSys == "LINUX")
 request_disk            = 10000000
 request_memory          = 5000
 Executable              = {runscript}
-Arguments               = {cfg} {outputdir} {outfile} {workdir} files_{num}.txt
+Arguments               = {cfg} {outputdir} {outfile} files_{num}.txt {cmsswvers}
 Output                  = logs/gen_{num}.out
 Error                   = logs/gen_{num}.err
 Log                     = logs/gen_{num}.log
 use_x509userproxy       = true
 initialdir              = {jobdir}
 Should_Transfer_Files   = YES
-transfer_input_files    = {workdir}/{cfg},{workdir}/files_{num}.txt
+transfer_input_files    = {workdir}/{cfg},{workdir}/files_{num}.txt,cmssw.tar.gz
 WhenToTransferOutput    = ON_EXIT
 Queue
 EOF
 
 condor_submit submit.cmd;
 rm submit.cmd""".format(
-			runscript=script, cfg=args.config, workdir="${CMSSW_BASE}", num=iJ, jobdir=args.jobdir, outputdir=args.outdir, outfile=args.outFormat.replace("JOBNUM",str(iJ))
+			runscript=script, cfg=args.config, workdir="${CMSSW_BASE}", num=iJ, jobdir=args.jobdir, outputdir=args.outdir, outfile=args.outFormat.replace("JOBNUM",str(iJ)), cmsswvers=args.cmsswv
 			))
 		jobscript.close()
 		os.system("chmod +x %s/submit_%d.sh" % (args.jobdir, iJ))		
