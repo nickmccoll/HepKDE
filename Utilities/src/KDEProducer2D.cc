@@ -84,7 +84,7 @@ std::vector<double>* KDEProducer2D::make_invHs(const double oneOverH0, TH2 * loc
         double dens = pilotKDE->Interpolate(xv,yv);
         const double var = localVar->Interpolate(xv,yv);
 //        std::cout <<"("<< (*xvals)[iX]<<","<<(*yvals)[iX]<<","<<dens<<"," << sigmax<<","<<sigmay;
-        if(doSigmaScaling && var) dens /= var;
+        if(doSigmaScaling && var) dens *= var;
 //        std::cout <<","<<dens <<") ";
         inv_his->emplace_back(  dens );
         orderedData.emplace_back(dens,  (*weights)[iX]);
@@ -257,14 +257,11 @@ double KDEProducer2D::getLocalVarX(const double x, const double y) const {
     double sumX2 = 0;
     int nEvt = 0;
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
-//        if(std::fabs(y - (*yvals)[iX]) > h0Y*4   ) continue;
         if(std::fabs(x - (*xvals)[iX]) > h0X   ) continue;
         nEvt++;
-//        const double delt = y - (*yvals)[iX];
-        const double otherWt =  1.0;//  oneOverRTTwoPi*oneOverh0Y*(*weights)[iX]*std::exp(oneOverTwoNegh0YSq*delt*delt);
-        sumX +=  otherWt*(*xvals)[iX];
-        sumX2 += otherWt*(*xvals)[iX]*(*xvals)[iX];
-        sumW  += otherWt;
+        sumX +=  (*weights)[iX]*(*xvals)[iX];
+        sumX2 += (*weights)[iX]*(*xvals)[iX]*(*xvals)[iX];
+        sumW  += (*weights)[iX];
     }
     const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
     return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
@@ -278,14 +275,10 @@ double KDEProducer2D::getLocalVarY(const double x, const double y) const {
     int nEvt = 0;
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
         if(std::fabs(y - (*yvals)[iX]) > h0Y   ) continue;
-//        if(std::fabs(x - (*xvals)[iX]) > h0X*4   ) continue;
-
         nEvt++;
-//        const double delt = x - (*xvals)[iX];
-        const double otherWt =  1.0;//oneOverRTTwoPi*oneOverh0X*(*weights)[iX]*std::exp(oneOverTwoNegh0XSq*delt*delt);
-        sumX +=  otherWt*(*yvals)[iX];
-        sumX2 += otherWt*(*yvals)[iX]*(*yvals)[iX];
-        sumW  += otherWt;
+        sumX +=  (*weights)[iX]*(*yvals)[iX];
+        sumX2 += (*weights)[iX]*(*yvals)[iX]*(*yvals)[iX];
+        sumW  += (*weights)[iX];
     }
     const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
     return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
@@ -324,7 +317,7 @@ TH2 *  KDEProducer2D::getLocalVarY(const std::string& name, const std::string& t
             else
                 h->SetBinContent(iX,iY,h->GetBinContent(iX, iY-1) );
         }
-        for(unsigned int iY = 1; iY <= nYBins; ++iY)
+        for(unsigned int iY = nYBins -1; iY > 0; --iY)
             if(h->GetBinContent(iX,iY) == 0) h->SetBinContent(iX,iY,h->GetBinContent(iX,iY+1));
     }
     return h;

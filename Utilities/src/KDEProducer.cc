@@ -98,7 +98,7 @@ void KDEProducer::buildPilotKDE(const unsigned int nXBins, const double xMin,
     for(unsigned int iX = 0; iX < nDataPts; ++iX){
         double dens = pilotKDE->Interpolate((*xvals)[iX]);
         double sigma = localVar->Interpolate((*xvals)[iX]);
-        if(doSigmaScaling && sigma) dens /=  (sigma);
+        if(doSigmaScaling && sigma) dens *=  (sigma);
         inv_his->emplace_back(  dens );
         orderedData.emplace_back(dens,  (*weights)[iX]);
     }
