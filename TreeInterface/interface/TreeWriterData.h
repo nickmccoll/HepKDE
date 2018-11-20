@@ -179,6 +179,7 @@ public:
     template<typename Type>
     void addSingle(Type& value, const std::string prefix, const std::string& name, const int bitComp=-1 ){
         assert(!isBooked);
+        if(bitComp){};//for comp warning
         data.push_back(new TreeVar<Type>(value,prefix,name,value));
     }
 
@@ -194,6 +195,7 @@ public:
     template<typename Type>
     void addVector(std::shared_ptr<std::vector<Type>> value, const std::string prefix, const std::string& sizeName, const std::string& name,const int bitComp=-1 ){
         assert(!isBooked);
+        if(bitComp){};//for comp warning
         auto tttype = ttreeTypes.find(std::type_index(typeid(Type)));
         assert(tttype != ttreeTypes.end());
 
