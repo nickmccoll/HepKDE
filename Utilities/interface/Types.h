@@ -5,6 +5,8 @@
 #include<string>
 #include <iomanip>
 #include <sstream>
+#include <memory>
+#include <vector>
 
 #include <Math/PtEtaPhiE4D.h>
 #include <Math/PtEtaPhiM4D.h>
