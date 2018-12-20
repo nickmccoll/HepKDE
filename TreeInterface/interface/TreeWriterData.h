@@ -173,7 +173,7 @@ public:
         ttreeTypes[std::type_index(typeid(bool))] = "O";// : [the letter o, not a zero] a boolean (Bool_t)
 
 };
-    virtual ~TreeWriterData() { for(auto d : data) delete d; };
+    virtual ~TreeWriterData() { for(auto d : data) delete d; for(auto * d: groupSizes) delete d; };
 
     //_____________________________________________________________________________
     template<typename Type>
@@ -229,15 +229,15 @@ protected:
         if (std::find(groupNames.begin(), groupNames.end(), sizeVarName) == groupNames.end())
         {
             groupNames.push_back(sizeVarName);
-            groupSizes.push_back(0);
-            data.push_back(new TreeSizeVar<Type>(groupSizes.back(),sizeVarName,value));
+            groupSizes.push_back(new unsigned int);
+            data.push_back(new TreeSizeVar<Type>(*groupSizes.back(),sizeVarName,value));
         }
     }
 
     bool isBooked;
     std::vector<AbstractTreeVar*> data;
     std::vector<std::string> groupNames;
-    std::vector<unsigned int> groupSizes;
+    std::vector<unsigned int *> groupSizes;
 
     std::map<std::type_index,std::string> ttreeTypes;
 
