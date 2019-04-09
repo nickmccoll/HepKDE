@@ -119,7 +119,7 @@ public:
 
   TTree * getTree() {return tree;}
 
-  void setEventRange(unsigned int startEvent = 0, unsigned int numEvents = -1){
+  void setEventRange(int startEvent = 0, int numEvents = -1){
       if(numEvents >0 )
           reader->SetEntriesRange(startEvent, startEvent  + numEvents );
       else
