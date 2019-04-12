@@ -8,11 +8,28 @@
 KDEProducer::KDEProducer(const std::vector<double> * xvals,
         const std::vector<double> * weights, const double hSF,
         const unsigned int nXBins, const double xMin, const double xMax,
-        const double trimFactor,const bool doSigmaScaling)
-        : xvals(xvals),weights(weights),nDataPts(xvals->size()), oneOverRootTwoPi(std::sqrt(1./TMath::TwoPi()))
+        const double trimFactor)
+        : xvals(xvals),weights(weights),nDataPts(xvals->size()),
+          oneOverRootTwoPi(std::sqrt(1./TMath::TwoPi()))
 {
     computeGlobalQuantities(hSF);
-    if(nXBins > 0) buildPilotKDE(nXBins,xMin,xMax,trimFactor,doSigmaScaling);
+    if(nXBins > 0){
+        setupPilotKDE(nXBins,xMin,xMax);
+        buildPilotKDE(trimFactor);
+    }
+}
+//--------------------------------------------------------------------------------------------------
+KDEProducer::KDEProducer(const std::vector<double> * xvals,
+        const std::vector<double> * weights, const double hSF,
+        const unsigned int nXBins, const double* xBins,const double trimFactor)
+        : xvals(xvals),weights(weights),nDataPts(xvals->size()),
+          oneOverRootTwoPi(std::sqrt(1./TMath::TwoPi()))
+{
+    computeGlobalQuantities(hSF);
+    if(nXBins > 0){
+        setupPilotKDE(nXBins,xBins);
+        buildPilotKDE(trimFactor);
+    }
 }
 //--------------------------------------------------------------------------------------------------
 void KDEProducer::computeGlobalQuantities(const double hSF) {
@@ -32,7 +49,7 @@ void KDEProducer::computeGlobalQuantities(const double hSF) {
         orderedData.emplace_back((*xvals)[iX],  (*weights)[iX]);
     }
 
-    sigma = std::sqrt( sumX2/sumW - (sumX*sumX)/(sumW*sumW)  );
+    const double sigma = std::sqrt( sumX2/sumW - (sumX*sumX)/(sumW*sumW)  );
 
     //compute IQR
     std::sort(orderedData.begin(),orderedData.end(),
@@ -82,12 +99,20 @@ void KDEProducer::computeGlobalQuantities(const double hSF) {
 //            <<") A: "<< A << " nEff: "<< effNevnts <<" h0: "<<h0<<std::endl;
 }
 //--------------------------------------------------------------------------------------------------
-void KDEProducer::buildPilotKDE(const unsigned int nXBins, const double xMin,
-        const double xMax, const double trimFactor,const bool doSigmaScaling) {
+void KDEProducer::setupPilotKDE(const unsigned int nXBins, const double xMin, const double xMax) {
     //For speed, the pilot density will be computed
     //in a grid, set by the histogram bin centers
     pilotKDE.reset(getPDF("pilotKDE","; pilot KDE",nXBins,xMin,xMax));
-    localVar.reset(getLocalVariance("localSigma",";local sigma",nXBins,xMin,xMax));
+}
+//--------------------------------------------------------------------------------------------------
+void KDEProducer::setupPilotKDE(const unsigned int nXBins, const double* xBins) {
+    //For speed, the pilot density will be computed
+    //in a grid, set by the histogram bin centers
+    pilotKDE.reset(getPDF("pilotKDE","; pilot KDE",nXBins,xBins));
+}
+//--------------------------------------------------------------------------------------------------
+void KDEProducer::buildPilotKDE(const double trimFactor) {
+//    localVar.reset(getLocalVariance("localSigma",";local sigma",nXBins,xMin,xMax));
     //store the inverse of the bandwidths for spead
     inv_his.reset(new std::vector<double> );
     inv_his->reserve(nDataPts);
@@ -97,8 +122,8 @@ void KDEProducer::buildPilotKDE(const unsigned int nXBins, const double xMin,
 
     for(unsigned int iX = 0; iX < nDataPts; ++iX){
         double dens = pilotKDE->Interpolate((*xvals)[iX]);
-        double sigma = localVar->Interpolate((*xvals)[iX]);
-        if(doSigmaScaling && sigma) dens *=  (sigma);
+//        double sigma = localVar->Interpolate((*xvals)[iX]);
+//        if(doSigmaScaling && sigma) dens *=  (sigma);
         inv_his->emplace_back(  dens );
         orderedData.emplace_back(dens,  (*weights)[iX]);
     }
@@ -183,23 +208,38 @@ double KDEProducer::getDensity(const double x, double* weight) const {
 TH1* KDEProducer::getPDF(const std::string& name, const std::string& title,
         const int unsigned nBins, const float xMin, const float xMax) const {
     TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,xMin,xMax);
-    double weight;
-    for(unsigned int iB = 1; iB <= nBins; ++iB){
-        h->SetBinContent(iB,getDensity(h->GetBinCenter(iB),&weight));
-        h->SetBinError(iB,weight);
-    }
+    fillPDF(h,false);
+    return h;
+}
+//--------------------------------------------------------------------------------------------------
+TH1* KDEProducer::getPDF(const std::string& name, const std::string& title,
+        const int unsigned nBins, const double* bins) const {
+    TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,bins);
+    fillPDF(h,false);
     return h;
 }
 //--------------------------------------------------------------------------------------------------
 TH1* KDEProducer::getAPDF(const std::string& name, const std::string& title,
         const unsigned int nBins, const float xMin, const float xMax) const {
     TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,xMin,xMax);
-    double weight;
-    for(unsigned int iB = 1; iB <= nBins; ++iB){
-        h->SetBinContent(iB,getADensity(h->GetBinCenter(iB),&weight));
-        h->SetBinError(iB,weight);
-    }
+    fillPDF(h,true);
     return h;
+}
+//--------------------------------------------------------------------------------------------------
+TH1* KDEProducer::getAPDF(const std::string& name, const std::string& title,
+        const unsigned int nBins, const double* bins) const {
+    TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,bins);
+    fillPDF(h,true);
+    return h;
+}
+//--------------------------------------------------------------------------------------------------
+void KDEProducer::fillPDF(TH1* newHist,  const bool adaptive) const {
+    double weight;
+    for(int iB = 1; iB <= newHist->GetNbinsX(); ++iB){
+        newHist->SetBinContent(iB,adaptive ? getADensity(newHist->GetBinCenter(iB),&weight)
+                :getDensity(newHist->GetBinCenter(iB),&weight));
+        newHist->SetBinError(iB,weight);
+    }
 }
 //--------------------------------------------------------------------------------------------------
 TH1* KDEProducer::convToHist(const TH1 * hist) const {
@@ -216,45 +256,57 @@ TH1* KDEProducer::getPilotPDF() const {
 //--------------------------------------------------------------------------------------------------
 TH1* KDEProducer::getABandwidths(const std::string& name, const std::string& title,
         const unsigned int nBins, const float xMin, const float xMax) const {
-    std::vector<float> sumWs (nBins+1,0);
     TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,xMin,xMax);
+    fillABandwidths(h);
+    return h;
+}
+//--------------------------------------------------------------------------------------------------
+TH1* KDEProducer::getABandwidths(const std::string& name, const std::string& title,
+        const unsigned int nBins, const double* bins) const {
+    TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,bins);
+    fillABandwidths(h);
+    return h;
+}
+//--------------------------------------------------------------------------------------------------
+void KDEProducer::fillABandwidths(TH1* newHist) const {
+    const int nBins = newHist->GetNbinsX();
+    std::vector<float> sumWs (nBins+1,0);
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
-        const unsigned int bin = h->FindFixBin((*xvals)[iX]);
+        const int bin = newHist->FindFixBin((*xvals)[iX]);
         if(bin < 1 || bin > nBins) continue;
-        h->SetBinContent(bin, h->GetBinContent(bin) + (*weights)[iX]/(*inv_his)[iX]    );
+        newHist->SetBinContent(bin, newHist->GetBinContent(bin) + (*weights)[iX]/(*inv_his)[iX]);
         sumWs[bin] += (*weights)[iX] ;
     }
-    for(int iB = 1; iB <= h->GetNbinsX(); ++iB)
+    for(int iB = 1; iB <= newHist->GetNbinsX(); ++iB)
         if(sumWs[iB])
-        h->SetBinContent(iB, h->GetBinContent(iB)/sumWs[iB] );
-    return h;
+            newHist->SetBinContent(iB, newHist->GetBinContent(iB)/sumWs[iB] );
 }
-//--------------------------------------------------------------------------------------------------
-double KDEProducer::getLocalVariance(const double x) const {
-    double sumW = 0;
-    double sumX = 0;
-    double sumX2 = 0;
-    int nEvt = 0;
-    for(unsigned int iX = 0; iX < nDataPts; ++iX ){
-        if(std::fabs(x - (*xvals)[iX]) > h0   ) continue;
-        nEvt++;
-        sumX += (*weights)[iX]*(*xvals)[iX];
-        sumX2 += (*weights)[iX]*(*xvals)[iX]*(*xvals)[iX];
-        sumW  += (*weights)[iX];
-    }
-    const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
-    return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
-
-}
-//--------------------------------------------------------------------------------------------------
-TH1 *  KDEProducer::getLocalVariance(const std::string& name, const std::string& title,
-        const unsigned int nBins, const float xMin, const float xMax) const {
-    TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,xMin,xMax);
-    for(unsigned int iB = 1; iB <= nBins; ++iB)
-        h->SetBinContent(iB,getLocalVariance(h->GetBinCenter(iB)));
-    for(unsigned int iB = 2; iB <= nBins; ++iB)
-        if(h->GetBinContent(iB) == 0) h->SetBinContent(iB,h->GetBinContent(iB-1));
-    for(unsigned int iB = nBins -1; iB > 0; --iB)
-        if(h->GetBinContent(iB) == 0) h->SetBinContent(iB,h->GetBinContent(iB+1));
-    return h;
-}
+////--------------------------------------------------------------------------------------------------
+//double KDEProducer::getLocalVariance(const double x) const {
+//    double sumW = 0;
+//    double sumX = 0;
+//    double sumX2 = 0;
+//    int nEvt = 0;
+//    for(unsigned int iX = 0; iX < nDataPts; ++iX ){
+//        if(std::fabs(x - (*xvals)[iX]) > h0   ) continue;
+//        nEvt++;
+//        sumX += (*weights)[iX]*(*xvals)[iX];
+//        sumX2 += (*weights)[iX]*(*xvals)[iX]*(*xvals)[iX];
+//        sumW  += (*weights)[iX];
+//    }
+//    const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
+//    return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
+//
+//}
+////--------------------------------------------------------------------------------------------------
+//TH1 *  KDEProducer::getLocalVariance(const std::string& name, const std::string& title,
+//        const unsigned int nBins, const float xMin, const float xMax) const {
+//    TH1 * h = new TH1F(name.c_str(), title.c_str(), nBins,xMin,xMax);
+//    for(unsigned int iB = 1; iB <= nBins; ++iB)
+//        h->SetBinContent(iB,getLocalVariance(h->GetBinCenter(iB)));
+//    for(unsigned int iB = 2; iB <= nBins; ++iB)
+//        if(h->GetBinContent(iB) == 0) h->SetBinContent(iB,h->GetBinContent(iB-1));
+//    for(unsigned int iB = nBins -1; iB > 0; --iB)
+//        if(h->GetBinContent(iB) == 0) h->SetBinContent(iB,h->GetBinContent(iB+1));
+//    return h;
+//}

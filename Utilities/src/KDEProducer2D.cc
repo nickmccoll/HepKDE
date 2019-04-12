@@ -6,14 +6,32 @@
 #include "TH2F.h"
 #include "TH1F.h"
 //--------------------------------------------------------------------------------------------------
-KDEProducer2D::KDEProducer2D(const std::vector<double> * xvals,const std::vector<double> * yvals, const std::vector<double> * weights,
-        const double hxSF,  const unsigned int nXBins, const double xMin, const double xMax,const double trimFactorX,
-        const double hySF, const unsigned int nYBins, const double yMin, const double yMax, const double trimFactorY,
-        const bool doSigmaScaling)
-        : xvals(xvals),yvals(yvals),weights(weights),nDataPts(xvals->size()), oneOverTwoPi(1./TMath::TwoPi())//,oneOverRTTwoPi(std::sqrt(oneOverTwoPi))
+KDEProducer2D::KDEProducer2D(const std::vector<double> * xvals,const std::vector<double> * yvals,
+        const std::vector<double> * weights, const double hxSF,  const unsigned int nXBins,
+        const double xMin, const double xMax, const double trimFactorX, const double hySF,
+        const unsigned int nYBins, const double yMin, const double yMax, const double trimFactorY)
+        : xvals(xvals),yvals(yvals),weights(weights),nDataPts(xvals->size()),
+          oneOverTwoPi(1./TMath::TwoPi())
 {
     computeGlobalQuantities(hxSF,hySF);
-    if(nXBins > 0) buildPilotKDE(nXBins,xMin,xMax,trimFactorX,nYBins,yMin,yMax,trimFactorY,doSigmaScaling);
+    if(nXBins > 0){
+        setupPilotKDE(nXBins,xMin,xMax,nYBins,yMin,yMax);
+        buildPilotKDE(trimFactorX,trimFactorY);
+    }
+}
+//--------------------------------------------------------------------------------------------------
+KDEProducer2D::KDEProducer2D(const std::vector<double> * xvals,const std::vector<double> * yvals,
+        const std::vector<double> * weights, const double hxSF,  const unsigned int nXBins,
+        const double xMin, const double xMax, const double trimFactorX, const double hySF,
+        const unsigned int nYBins, const double* yBins, const double trimFactorY)
+        : xvals(xvals),yvals(yvals),weights(weights),nDataPts(xvals->size()),
+          oneOverTwoPi(1./TMath::TwoPi())
+{
+    computeGlobalQuantities(hxSF,hySF);
+    if(nXBins > 0){
+        setupPilotKDE(nXBins,xMin,xMax,nYBins,yBins);
+        buildPilotKDE(trimFactorX,trimFactorY);
+    }
 }
 //--------------------------------------------------------------------------------------------------
 void KDEProducer2D::computeGlobalQuantities(const double hSFX,const double hSFY) {
@@ -34,8 +52,8 @@ void KDEProducer2D::computeGlobalQuantities(const double hSFX,const double hSFY)
         sumY2 += (*yvals)[iX]*(*yvals)[iX]*(*weights)[iX];
     }
 
-    sigmaX = std::sqrt( sumX2/sumW - (sumX*sumX)/(sumW*sumW)  );
-    sigmaY = std::sqrt( sumY2/sumW - (sumY*sumY)/(sumW*sumW)  );
+    const double sigmaX = std::sqrt( sumX2/sumW - (sumX*sumX)/(sumW*sumW)  );
+    const double sigmaY = std::sqrt( sumY2/sumW - (sumY*sumY)/(sumW*sumW)  );
 
     //correction because we are using weighted events
     const double effNevnts = sumW*sumW/sumW2;
@@ -50,41 +68,52 @@ void KDEProducer2D::computeGlobalQuantities(const double hSFX,const double hSFY)
     oneOverNEvt = 1./nEvt;
 
     //Debugging output:
-//    std::cout <<"Nvt: "<< nDataPts << " SumW: "<< nEvt <<" stdDev: (" << sigmaX<<","<<sigmaY <<") h0: ("<<
+//    std::cout <<"Nvt: "<< nDataPts << " SumW: "<< nEvt
+//    <<" stdDev: (" << sigmaX<<","<<sigmaY <<") h0: ("<<
 //            h0X<<","<<h0Y<<") nEff: "<<effNevnts <<std::endl;
 }
 //--------------------------------------------------------------------------------------------------
-void KDEProducer2D::buildPilotKDE(const unsigned int nXBins, const double xMin,
-        const double xMax,const double trimFactorX, const unsigned int nYBins, const double yMin,
-        const double yMax, const double trimFactorY,const bool doSigmaScaling) {
+void KDEProducer2D::setupPilotKDE(const unsigned int nXBins, const double xMin,
+        const double xMax,const unsigned int nYBins, const double yMin, const double yMax) {
     //For speed, the pilot density will be computed
     //in a grid, set by the histogram bin centers
     pilotKDE.reset(getPDF("pilotKDE","; pilot KDE",nXBins,xMin,xMax,nYBins,yMin,yMax));
-    localVarX.reset(getLocalVarX("localVarX",";local var",nXBins,xMin,xMax,nYBins,yMin,yMax));
-    localVarY.reset(getLocalVarY("localVarY",";local var",nXBins,xMin,xMax,nYBins,yMin,yMax));
-    //store the inverse of the bandwidths for spead
-    inv_hxis.reset(make_invHs(oneOverh0X,localVarX.get(),trimFactorX,doSigmaScaling) );
-    inv_hyis.reset(make_invHs(oneOverh0Y,localVarY.get(),trimFactorY,doSigmaScaling));
 }
 //--------------------------------------------------------------------------------------------------
-std::vector<double>* KDEProducer2D::make_invHs(const double oneOverH0, TH2 * localVar,
-        const double trimFactor,const bool doSigmaScaling) const {
+void KDEProducer2D::setupPilotKDE(const unsigned int nXBins, const double xMin,
+        const double xMax,const unsigned int nYBins, const double* yBins) {
+    //For speed, the pilot density will be computed
+    //in a grid, set by the histogram bin centers
+    pilotKDE.reset(getPDF("pilotKDE","; pilot KDE",nXBins,xMin,xMax,nYBins,yBins));
+}
+//--------------------------------------------------------------------------------------------------
+void KDEProducer2D::buildPilotKDE(const double trimFactorX,const double trimFactorY) {
+    //store the inverse of the bandwidths for spead
+    inv_hxis.reset(make_invHs(oneOverh0X,trimFactorX) );
+    inv_hyis.reset(make_invHs(oneOverh0Y,trimFactorY));
+    //    localVarX.reset(getLocalVarX("localVarX",";local var",nXBins,xMin,xMax,nYBins,yMin,yMax));
+    //    localVarY.reset(getLocalVarY("localVarY",";local var",nXBins,xMin,xMax,nYBins,yMin,yMax));
+//    inv_hxis.reset(make_invHs(oneOverh0X,localVarX.get(),trimFactorX,doSigmaScaling) );
+//    inv_hyis.reset(make_invHs(oneOverh0Y,localVarY.get(),trimFactorY,doSigmaScaling));
+}
+//--------------------------------------------------------------------------------------------------
+std::vector<double>* KDEProducer2D::make_invHs(const double oneOverH0,const double trimFactor)const{
     auto * inv_his = new std::vector<double>;
     inv_his->reserve(nDataPts);
     std::vector< std::pair<float,float> > orderedData; orderedData.reserve(nDataPts);
 
-    const double minIntX = localVar->GetXaxis()->GetBinCenter(1);
-    const double maxIntX = localVar->GetXaxis()->GetBinCenter(localVar->GetNbinsX());
-    const double minIntY = localVar->GetYaxis()->GetBinCenter(1);
-    const double maxIntY = localVar->GetYaxis()->GetBinCenter(localVar->GetNbinsY());
+    const double minIntX = pilotKDE->GetXaxis()->GetBinCenter(1);
+    const double maxIntX = pilotKDE->GetXaxis()->GetBinCenter(pilotKDE->GetNbinsX());
+    const double minIntY = pilotKDE->GetYaxis()->GetBinCenter(1);
+    const double maxIntY = pilotKDE->GetYaxis()->GetBinCenter(pilotKDE->GetNbinsY());
 
     for(unsigned int iX = 0; iX < nDataPts; ++iX){
         const float xv = std::max(minIntX,std::min((*xvals)[iX],maxIntX));
         const float yv = std::max(minIntY,std::min((*yvals)[iX],maxIntY));
         double dens = pilotKDE->Interpolate(xv,yv);
-        const double var = localVar->Interpolate(xv,yv);
+//        const double var = localVar->Interpolate(xv,yv);
 //        std::cout <<"("<< (*xvals)[iX]<<","<<(*yvals)[iX]<<","<<dens<<"," << sigmax<<","<<sigmay;
-        if(doSigmaScaling && var) dens *= var;
+//        if(doSigmaScaling && var) dens *= var;
 //        std::cout <<","<<dens <<") ";
         inv_his->emplace_back(  dens );
         orderedData.emplace_back(dens,  (*weights)[iX]);
@@ -94,7 +123,8 @@ std::vector<double>* KDEProducer2D::make_invHs(const double oneOverH0, TH2 * loc
     if(trimFactor > 0){
         //first calculate the median
         std::sort(orderedData.begin(),orderedData.end(),
-                [](const std::pair<float,float> a, std::pair<float,float> b ) {return a.first < b.first;}
+                [](const std::pair<float,float> a, std::pair<float,float> b )
+                    {return a.first < b.first;}
         );
         double runningSum = 0;
         double median = 0;
@@ -159,7 +189,8 @@ double KDEProducer2D::getDensity(const double x,const double y, double* weight) 
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
         const double deltX = (x - (*xvals)[iX]);
         const double deltY = (y - (*yvals)[iX]);
-        const double wt = (*weights)[iX]*std::exp(oneOverTwoNegh0XSq*deltX*deltX+oneOverTwoNegh0YSq*deltY*deltY);
+        const double wt = (*weights)[iX]
+                           *std::exp(oneOverTwoNegh0XSq*deltX*deltX+oneOverTwoNegh0YSq*deltY*deltY);
         dens += wt;
         sumW2 += wt*wt;
     }
@@ -172,30 +203,49 @@ TH2* KDEProducer2D::getPDF(const std::string& name, const std::string& title,
         const int unsigned nYBins, const float yMin, const float yMax
         ) const {
     TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
-    double weight;
-    for(unsigned int iX = 1; iX <= nXBins; ++iX)
-        for(unsigned int iY = 1; iY <= nYBins; ++iY){
-        h->SetBinContent(iX,iY,
-                getDensity(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY),&weight)
-                );
-        h->SetBinError(iX,iY,weight);
-        }
+    fillPDF(h,false);
+    return h;
+}
+//--------------------------------------------------------------------------------------------------
+TH2* KDEProducer2D::getPDF(const std::string& name, const std::string& title,
+        const int unsigned nXBins, const float xMin, const float xMax,
+        const int unsigned nYBins, const double* yBins) const {
+    TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yBins);
+    fillPDF(h,false);
     return h;
 }
 //--------------------------------------------------------------------------------------------------
 TH2* KDEProducer2D::getAPDF(const std::string& name, const std::string& title,
-        const unsigned int nXBins, const float xMin, const float xMax,
-        const unsigned int nYBins, const float yMin, const float yMax) const {
+        const int unsigned nXBins, const float xMin, const float xMax,
+        const int unsigned nYBins, const float yMin, const float yMax
+        ) const {
     TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
-    double weight;
-    for(unsigned int iX = 1; iX <= nXBins; ++iX)
-        for(unsigned int iY = 1; iY <= nYBins; ++iY){
-        h->SetBinContent(iX,iY,
-                getADensity(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY),&weight)
-                );
-        h->SetBinError(iX,iY,weight);
-        }
+    fillPDF(h,true);
     return h;
+}
+//--------------------------------------------------------------------------------------------------
+TH2* KDEProducer2D::getAPDF(const std::string& name, const std::string& title,
+        const int unsigned nXBins, const float xMin, const float xMax,
+        const int unsigned nYBins, const double* yBins) const {
+    TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yBins);
+    fillPDF(h,true);
+    return h;
+}
+//--------------------------------------------------------------------------------------------------
+void KDEProducer2D::fillPDF(TH2 * h,const bool adaptive) const {
+    double weight;
+    const unsigned int nBinsX = h->GetNbinsX();
+    const int unsigned nBinsY = h->GetNbinsY();
+    const TAxis * xAxis = h->GetXaxis();
+    const TAxis * yAxis = h->GetYaxis();
+    for(unsigned int iX = 1; iX <= nBinsX; ++iX)
+        for(unsigned int iY = 1; iY <= nBinsY; ++iY){
+            h->SetBinContent(iX,iY, adaptive ?
+                    getADensity(xAxis->GetBinCenter(iX),yAxis->GetBinCenter(iY),&weight)
+                    : getDensity(xAxis->GetBinCenter(iX),yAxis->GetBinCenter(iY),&weight)
+                );
+            h->SetBinError(iX,iY,weight);
+        }
 }
 //--------------------------------------------------------------------------------------------------
 TH1* KDEProducer2D::convToHist(const TH1 * hist) const {
@@ -219,106 +269,108 @@ TH2* KDEProducer2D::getPilotPDF() const {
     return oH;
 }
 //--------------------------------------------------------------------------------------------------
-TH2* KDEProducer2D::getABandwidths(const std::string& name, const std::string& title,
-        const unsigned int nXBins, const float xMin, const float xMax,
-        const unsigned int nYBins, const float yMin, const float yMax, const std::vector<double>* bands)const{
+void KDEProducer2D::fillABandwidths(TH2 * h, const std::vector<double>* bands)const{
+    const unsigned int nXBins = h->GetNbinsX();
+    const unsigned int nYBins = h->GetNbinsY();
     std::vector<std::vector<float>> sumWs (nXBins+1,std::vector<float>(nYBins+1,0));
-    TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
     for(unsigned int iX = 0; iX < nDataPts; ++iX ){
         const unsigned int binx = h->GetXaxis()->FindFixBin((*xvals)[iX]);
         const unsigned int biny = h->GetYaxis()->FindFixBin((*yvals)[iX]);
         if(binx < 1 || binx > nXBins) continue;
         if(biny < 1 || biny > nYBins) continue;
-        h->SetBinContent(binx,biny, h->GetBinContent(binx,biny) + (*weights)[iX]/(*bands)[iX]    );
+        h->SetBinContent(binx,biny, h->GetBinContent(binx,biny) + (*weights)[iX]/(*bands)[iX]);
         sumWs[binx][biny] += (*weights)[iX] ;
     }
     for(int iX = 1; iX <= h->GetNbinsX(); ++iX)
         for(int iY = 1; iY <= h->GetNbinsY(); ++iY)
             if(sumWs[iX][iY] )
                 h->SetBinContent(iX,iY, h->GetBinContent(iX,iY)/sumWs[iX][iY] );
-    return h;
 }
 //--------------------------------------------------------------------------------------------------
-TH2* KDEProducer2D::getABandwidthsX(const std::string& name, const std::string& title,
+TH2* KDEProducer2D::getABandwidths(const std::string& name, const std::string& title,
         const unsigned int nXBins, const float xMin, const float xMax,
-        const unsigned int nYBins, const float yMin, const float yMax)const{
-    return getABandwidths(name,title,nXBins,xMin,xMax,nYBins,yMin,yMax,inv_hxis.get());
-}
-//--------------------------------------------------------------------------------------------------
-TH2* KDEProducer2D::getABandwidthsY(const std::string& name, const std::string& title,
-        const unsigned int nXBins, const float xMin, const float xMax,
-        const unsigned int nYBins, const float yMin, const float yMax)const{
-    return getABandwidths(name,title,nXBins,xMin,xMax,nYBins,yMin,yMax,inv_hyis.get());
-}
-//--------------------------------------------------------------------------------------------------
-double KDEProducer2D::getLocalVarX(const double x, const double y) const {
-    double sumW = 0;
-    double sumX = 0;
-    double sumX2 = 0;
-    int nEvt = 0;
-    for(unsigned int iX = 0; iX < nDataPts; ++iX ){
-        if(std::fabs(x - (*xvals)[iX]) > h0X   ) continue;
-        nEvt++;
-        sumX +=  (*weights)[iX]*(*xvals)[iX];
-        sumX2 += (*weights)[iX]*(*xvals)[iX]*(*xvals)[iX];
-        sumW  += (*weights)[iX];
-    }
-    const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
-    return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
-    double y2 = y; y2++;//unrun garbage to remove warning
-}
-//--------------------------------------------------------------------------------------------------
-double KDEProducer2D::getLocalVarY(const double x, const double y) const {
-    double sumW = 0;
-    double sumX = 0;
-    double sumX2 = 0;
-    int nEvt = 0;
-    for(unsigned int iX = 0; iX < nDataPts; ++iX ){
-        if(std::fabs(y - (*yvals)[iX]) > h0Y   ) continue;
-        nEvt++;
-        sumX +=  (*weights)[iX]*(*yvals)[iX];
-        sumX2 += (*weights)[iX]*(*yvals)[iX]*(*yvals)[iX];
-        sumW  += (*weights)[iX];
-    }
-    const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
-    return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
-    double x2 = x; x2++;//unrun garbage to remove warning
-}
-//--------------------------------------------------------------------------------------------------
-TH2 *  KDEProducer2D::getLocalVarX(const std::string& name, const std::string& title,
-        const unsigned int nXBins, const float xMin, const float xMax,
-        const unsigned int nYBins, const float yMin, const float yMax)const {
+        const unsigned int nYBins, const float yMin, const float yMax, bool doX)const{
     TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
-    for(unsigned int iY = 1; iY <= nYBins; ++iY){
-        for(unsigned int iX = 1; iX <= nXBins; ++iX){
-            const double locVar = iY > 1 ? h->GetBinContent(iX, 1)
-                    : getLocalVarX(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY));
-            if(locVar)
-                h->SetBinContent(iX,iY,locVar );
-            else
-                h->SetBinContent(iX,iY,h->GetBinContent(iX -1, iY) );
-        }
-        for(unsigned int iX = nXBins -1; iX > 0; --iX)
-            if(h->GetBinContent(iX,iY) == 0) h->SetBinContent(iX,iY,h->GetBinContent(iX+1,iY));
-    }
+    fillABandwidths(h,doX ? inv_hxis.get() :inv_hyis.get() );
     return h;
 }
 //--------------------------------------------------------------------------------------------------
-TH2 *  KDEProducer2D::getLocalVarY(const std::string& name, const std::string& title,
+TH2* KDEProducer2D::getABandwidths(const std::string& name, const std::string& title,
         const unsigned int nXBins, const float xMin, const float xMax,
-        const unsigned int nYBins, const float yMin, const float yMax)const {
-    TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
-    for(unsigned int iX = 1; iX <= nXBins; ++iX){
-    for(unsigned int iY = 1; iY <= nYBins; ++iY){
-        const double locVar = iX > 1 ? h->GetBinContent(1, iY)
-                : getLocalVarY(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY));
-            if(locVar)
-                h->SetBinContent(iX,iY,locVar );
-            else
-                h->SetBinContent(iX,iY,h->GetBinContent(iX, iY-1) );
-        }
-        for(unsigned int iY = nYBins -1; iY > 0; --iY)
-            if(h->GetBinContent(iX,iY) == 0) h->SetBinContent(iX,iY,h->GetBinContent(iX,iY+1));
-    }
+        const unsigned int nYBins, const double* yBins, bool doX)const{
+    TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yBins);
+    fillABandwidths(h,doX ? inv_hxis.get() :inv_hyis.get() );
     return h;
 }
+////--------------------------------------------------------------------------------------------------
+//double KDEProducer2D::getLocalVarX(const double x, const double y) const {
+//    double sumW = 0;
+//    double sumX = 0;
+//    double sumX2 = 0;
+//    int nEvt = 0;
+//    for(unsigned int iX = 0; iX < nDataPts; ++iX ){
+//        if(std::fabs(x - (*xvals)[iX]) > h0X   ) continue;
+//        nEvt++;
+//        sumX +=  (*weights)[iX]*(*xvals)[iX];
+//        sumX2 += (*weights)[iX]*(*xvals)[iX]*(*xvals)[iX];
+//        sumW  += (*weights)[iX];
+//    }
+//    const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
+//    return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
+//    double y2 = y; y2++;//unrun garbage to remove warning
+//}
+////--------------------------------------------------------------------------------------------------
+//double KDEProducer2D::getLocalVarY(const double x, const double y) const {
+//    double sumW = 0;
+//    double sumX = 0;
+//    double sumX2 = 0;
+//    int nEvt = 0;
+//    for(unsigned int iX = 0; iX < nDataPts; ++iX ){
+//        if(std::fabs(y - (*yvals)[iX]) > h0Y   ) continue;
+//        nEvt++;
+//        sumX +=  (*weights)[iX]*(*yvals)[iX];
+//        sumX2 += (*weights)[iX]*(*yvals)[iX]*(*yvals)[iX];
+//        sumW  += (*weights)[iX];
+//    }
+//    const double var = sumX2/sumW - (sumX*sumX)/(sumW*sumW);
+//    return nEvt > 100 && sumW > 0 && var > 0 ? var : 0;
+//    double x2 = x; x2++;//unrun garbage to remove warning
+//}
+////--------------------------------------------------------------------------------------------------
+//TH2 *  KDEProducer2D::getLocalVarX(const std::string& name, const std::string& title,
+//        const unsigned int nXBins, const float xMin, const float xMax,
+//        const unsigned int nYBins, const float yMin, const float yMax)const {
+//    TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
+//    for(unsigned int iY = 1; iY <= nYBins; ++iY){
+//        for(unsigned int iX = 1; iX <= nXBins; ++iX){
+//            const double locVar = iY > 1 ? h->GetBinContent(iX, 1)
+//                    : getLocalVarX(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY));
+//            if(locVar)
+//                h->SetBinContent(iX,iY,locVar );
+//            else
+//                h->SetBinContent(iX,iY,h->GetBinContent(iX -1, iY) );
+//        }
+//        for(unsigned int iX = nXBins -1; iX > 0; --iX)
+//            if(h->GetBinContent(iX,iY) == 0) h->SetBinContent(iX,iY,h->GetBinContent(iX+1,iY));
+//    }
+//    return h;
+//}
+////--------------------------------------------------------------------------------------------------
+//TH2 *  KDEProducer2D::getLocalVarY(const std::string& name, const std::string& title,
+//        const unsigned int nXBins, const float xMin, const float xMax,
+//        const unsigned int nYBins, const float yMin, const float yMax)const {
+//    TH2 * h = new TH2F(name.c_str(), title.c_str(), nXBins,xMin,xMax,nYBins,yMin,yMax);
+//    for(unsigned int iX = 1; iX <= nXBins; ++iX){
+//    for(unsigned int iY = 1; iY <= nYBins; ++iY){
+//        const double locVar = iX > 1 ? h->GetBinContent(1, iY)
+//                : getLocalVarY(h->GetXaxis()->GetBinCenter(iX),h->GetYaxis()->GetBinCenter(iY));
+//            if(locVar)
+//                h->SetBinContent(iX,iY,locVar );
+//            else
+//                h->SetBinContent(iX,iY,h->GetBinContent(iX, iY-1) );
+//        }
+//        for(unsigned int iY = nYBins -1; iY > 0; --iY)
+//            if(h->GetBinContent(iX,iY) == 0) h->SetBinContent(iX,iY,h->GetBinContent(iX,iY+1));
+//    }
+//    return h;
+//}
