@@ -1,12 +1,14 @@
-#ifndef ANALYSISSUPPORT_UTILITIES_INTERFACE_KDEProducer_H_
-#define ANALYSISSUPPORT_UTILITIES_INTERFACE_KDEProducer_H_
+#ifndef HEPKDE_KDEProducer1D_H_
+#define HEPKDE_KDEProducer1D_H_
 #include <vector>
 #include <string>
 #include <memory>
 
 class TH1;
 
-class KDEProducer {
+namespace HepKDE {
+
+class KDEProducer1D {
 public:
     // hSF -> external SF to apply to the bandwidth
     // The adaptive method includes a pilot KDE to estimate event density
@@ -15,11 +17,11 @@ public:
     // trimFactor -> How many factors above the median do you want the individual bandwidths to go ?
     // Trim higher ones to this value...negative for no trimming
     // doSigmaScaling -> apply variance scaling to the adaptive factors (depreciated)
-    KDEProducer(const std::vector<double> * xvals, const std::vector<double> * weights,
+    KDEProducer1D(const std::vector<double> * xvals, const std::vector<double> * weights,
             const double hSF, const unsigned int nXBins, const double xMin, const double xMax,
             const double trimFactor
     );
-    KDEProducer(const std::vector<double> * xvals, const std::vector<double> * weights,
+    KDEProducer1D(const std::vector<double> * xvals, const std::vector<double> * weights,
             const double hSF, const unsigned int nXBins, const double* xBins,
             const double trimFactor
     );
@@ -30,8 +32,6 @@ public:
     double getDensity(const double x, double* weight=0)const ;
     //get adaptive density at point x
     double getADensity(const double x, double* weight=0) const;
-    //get local variance
-//    double getLocalVariance(const double x)const ;
 
     //All histograms will be owned by the caller
     //Non adaptive pdf
@@ -53,9 +53,7 @@ public:
             const unsigned int nBins, const float xMin, const float xMax) const;
     TH1 * getABandwidths(const std::string& name, const std::string& title,
             const unsigned int nBins, const double* bins) const;
-    //Get local variance histogram
-//    TH1 * getLocalVariance(const std::string& name, const std::string& title,
-//    const unsigned int nBins, const float xMin, const float xMax) const;
+
 private:
     //calculates nEvt and h0
     void computeGlobalQuantities(const double hSF);
@@ -83,11 +81,12 @@ private:
 
     //calculated in buildPilotKDE
     std::unique_ptr<TH1> pilotKDE;
-//    std::unique_ptr<TH1> localVar;
     std::unique_ptr<std::vector<double>> inv_his;
 
     //Const
     const double oneOverRootTwoPi;
 
 };
+
+}
 #endif /* FRAMEWORK_PROCESSORS_INTERFACE_EVENTWEIGHTS_H_ */

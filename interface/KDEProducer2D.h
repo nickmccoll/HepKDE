@@ -1,5 +1,5 @@
-#ifndef ANALYSISSUPPORT_UTILITIES_INTERFACE_KDEProducer2D_H_
-#define ANALYSISSUPPORT_UTILITIES_INTERFACE_KDEProducer2D_H_
+#ifndef HEPKDE_KDEProducer2D_H_
+#define HEPKDE_KDEProducer2D_H_
 #include <vector>
 #include <string>
 #include <memory>
@@ -7,6 +7,7 @@
 class TH1;
 class TH2;
 
+namespace HepKDE {
 class KDEProducer2D {
 public:
     // hSF(x,y) -> external SF to apply to the bandwidth
@@ -31,9 +32,6 @@ public:
     double getDensity(const double x,const double y, double* weight=0)const ;
     //get adaptive density at point x
     double getADensity(const double x,const double y, double* weight=0) const;
-    //Get local variance in one direction
-//    double getLocalVarX(const double x, const double y)const ;
-//    double getLocalVarY(const double x, const double y)const ;
 
     //All histograms will be owned by the caller
     //Non adaptive pdf
@@ -63,15 +61,7 @@ public:
     TH2 * getABandwidths(const std::string& name, const std::string& title,
             const unsigned int nXBins, const float xMin, const float xMax,
             const unsigned int nYBins, const double* yBins, bool doX)const;
-    //Get local variance histograms
-//    TH2 *  getLocalVarX(const std::string& name, const std::string& title,
-//            const unsigned int nXBins, const float xMin, const float xMax,
-//            const unsigned int nYBins, const float yMin, const float yMax
-//            )const ;
-//    TH2 *  getLocalVarY(const std::string& name, const std::string& title,
-//            const unsigned int nXBins, const float xMin, const float xMax,
-//            const unsigned int nYBins, const float yMin, const float yMax
-//            )const ;private:
+
 private:
     //calculates nEvt and h0
     void computeGlobalQuantities(const double hSFX,const double hSFY);
@@ -97,8 +87,6 @@ private:
     const unsigned int nDataPts;
 
     //calculated in computeGlobalQuantities
-//    double sigmaX        = 1;
-//    double sigmaY        = 1;
     double h0X           = 1;
     double h0Y           = 1;
     double oneOverh0X    = 1;
@@ -110,14 +98,14 @@ private:
 
     //calculated in buildPilotKDE
     std::unique_ptr<TH2> pilotKDE;
-//    std::unique_ptr<TH2> localVarX;
-//    std::unique_ptr<TH2> localVarY;
     std::unique_ptr<std::vector<double>> inv_hxis;
     std::unique_ptr<std::vector<double>> inv_hyis;
 
     //Const
     const double oneOverTwoPi;
-//    const double oneOverRTTwoPi;
+
 
 };
-#endif /* FRAMEWORK_PROCESSORS_INTERFACE_EVENTWEIGHTS_H_ */
+
+}
+#endif
