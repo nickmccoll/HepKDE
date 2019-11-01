@@ -132,7 +132,7 @@ The local bandwidth has two parameters: a global bandwidth $h$, which controls t
 A useful overview of adaptive KDE by Scott (reference below). He describes a possible pitfall in the method: it can over-smooth distribution tails. A solution that he proposes is to set an upper-bound on the $h_i$.  
 
 
-## Citations
+## General KDE references
 
 Most of this code uses ROOT, a tool used widely in HEP. More information:
 
