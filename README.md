@@ -13,6 +13,12 @@ KDE is a powerful tool, but a feature of HEP research is the large amount of dat
 
 All you need to do is to include either header file to use the code. There is one version for 1D and another for 2D. It is a bit clunky with a repeated code. This was done on purpose to make it very easy for the user to understand what is happening in either use. More information on the paramters can be found in the "KDE Implementation" section. A general overview of KDE can be found in "General Information on  KDE."
 
+Feel free to use it and have fun. If you do, you can cite this paper by the CMS Collaboration that first used it:
+
+CMS Collaboration, **Search for resonances decaying to a pair of Higgs bosons in the bbqq'lnu final state in proton-proton collisions at √s = 13 TeV**, JHEP 10 (2019) 125, doi:10.1007/JHEP10(2019)125                  
+https://link.springer.com/article/10.1007/JHEP10(2019)125. 
+
+
 If you want to try it out, first compile the library: 
 
 ```Shell
@@ -33,7 +39,7 @@ Here is the test output:
 
 <img src="/test/testOutput.png" alt="output" width="500"/>
 
-With a dataset of 500 events, we were able to resonably estimate the true distribution down to 3 standard deviations. Not too shabby!
+With a dataset of 500 events, we were able to reasonably estimate the true distribution down to 3 standard deviations. Not too shabby!
 
 
 
@@ -106,7 +112,7 @@ The local bandwidth has two parameters: a global bandwidth <img src="/tex/2ad9d0
 A useful overview of adaptive KDE by Scott (reference below). He describes a possible pitfall in the method: it can over-smooth distribution tails. A solution that he proposes is to set an upper-bound on the <img src="/tex/ddd3bc35b936d6a00e6a81cab0061f32.svg?invert_in_darkmode&sanitize=true" align=middle width=14.12201339999999pt height=22.831056599999986pt/>.  
 
 
-## Citations
+## General KDE references
 
 Most of this code uses ROOT, a tool used widely in HEP. More information:
 
