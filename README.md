@@ -13,6 +13,29 @@ KDE is a powerful tool, but a feature of HEP research is the large amount of dat
 
 All you need to do is to include either header file to use the code. There is one version for 1D and another for 2D. It is a bit clunky with a repeated code. This was done on purpose to make it very easy for the user to understand what is happening in either use. More information on the paramters can be found in the "KDE Implementation" section. A general overview of KDE can be found in "General Information on  KDE."
 
+If you want to try it out, first compile the library: 
+
+```Shell
+cd HepKDE
+make
+```
+
+Then run a test:
+
+```Shell
+cd test
+root
+root [0] .L ../HepKDE.so
+root [1] .x testMacro.C+
+```
+
+Here is the test output:
+
+![Test output](/test/testOutput.pdf)  
+
+With a dataset of 500 events, we were able to resonably estimate the true distribution down to 3 standard deviations. Not too shabby!
+
+
 
 ## KDE Implementation
 
