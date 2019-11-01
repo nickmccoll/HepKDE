@@ -31,7 +31,7 @@ root [1] .x testMacro.C+
 
 Here is the test output:
 
-<img src="/test/testOutput.png">
+<img src="/test/testOutput.pdf">
 
 With a dataset of 500 events, we were able to resonably estimate the true distribution down to 3 standard deviations. Not too shabby!
 
