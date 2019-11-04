@@ -97,7 +97,7 @@ This method can also be used with weighted input datasets. In that case the KDE 
 for events with weights $w_i$ and a a weighted event yield $\tilde{n}=\sum_{i=1}^n w_{i}$. $h_{\text{opt}}$ can also be extended for weighted event samples by changing $n$ in the equation for $h_\text{opt}$.  
 
 \begin{equation*}
-n \rightarrow \frac{\sum_{i=1}^n w_{i}}{\sum_{i=1}^n w_{i}^2}.  
+n \rightarrow \frac{(\sum_{i=1}^n w_{i})^2}{\sum_{i=1}^n w_{i}^2}.  
 \end{equation*}
 
 With this form, $h_\text{opt}$ minimizes the mean square error of $\hat{f}(x)$ in the case of normally distributed distributions for both weighted or unweighted input datasets.  
