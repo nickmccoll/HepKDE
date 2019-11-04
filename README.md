@@ -13,11 +13,13 @@ KDE is a powerful tool, but a feature of HEP research is the large amount of dat
 
 All you need to do is to include either header file to use the code. There is one version for 1D and another for 2D. It is a bit clunky with a repeated code. This was done on purpose to make it very easy for the user to understand what is happening in either use. More information on the paramters can be found in the "KDE Implementation" section. A general overview of KDE can be found in "General Information on  KDE."
 
+### Citation
 Feel free to use it and have fun. If you do, you can cite this paper by the CMS Collaboration that first used it:
 
 CMS Collaboration, **Search for resonances decaying to a pair of Higgs bosons in the bbqq'lnu final state in proton-proton collisions at √s = 13 TeV**, JHEP 10 (2019) 125, doi:10.1007/JHEP10(2019)125                  
 https://link.springer.com/article/10.1007/JHEP10(2019)125. 
 
+### Test it out
 
 If you want to try it out, first compile the library: 
 
